@@ -27,6 +27,7 @@
     "wagmi": "^0.12.12"
   },
   "devDependencies": {
+    "hardhat": "^2.15.0",
     "hardhat-storage-layout": "^0.1.7"
   }
 }
