@@ -1053,62 +1053,62 @@ def withdraw(
     # See @dev note, above.
     value: uint256 = self._shareValue(shares)
 
-    if value > self.token.balanceOf(self):
-        totalLoss: uint256 = 0
-        # We need to go get some from our strategies in the withdrawal queue
-        # NOTE: This performs forced withdrawals from each Strategy. During
-        #       forced withdrawal, a Strategy may realize a loss. That loss
-        #       is reported back to the Vault, and the will affect the amount
-        #       of tokens that the withdrawer receives for their shares. They
-        #       can optionally specify the maximum acceptable loss (in BPS)
-        #       to prevent excessive losses on their withdrawals (which may
-        #       happen in certain edge cases where Strategies realize a loss)
-        for strategy in self.withdrawalQueue:
-            if strategy == ZERO_ADDRESS:
-                break  # We've exhausted the queue
+    # if value > self.token.balanceOf(self):
+    #     totalLoss: uint256 = 0
+    #     # We need to go get some from our strategies in the withdrawal queue
+    #     # NOTE: This performs forced withdrawals from each Strategy. During
+    #     #       forced withdrawal, a Strategy may realize a loss. That loss
+    #     #       is reported back to the Vault, and the will affect the amount
+    #     #       of tokens that the withdrawer receives for their shares. They
+    #     #       can optionally specify the maximum acceptable loss (in BPS)
+    #     #       to prevent excessive losses on their withdrawals (which may
+    #     #       happen in certain edge cases where Strategies realize a loss)
+    #     for strategy in self.withdrawalQueue:
+    #         if strategy == ZERO_ADDRESS:
+    #             break  # We've exhausted the queue
 
-            vault_balance: uint256 = self.token.balanceOf(self)
-            if value <= vault_balance:
-                break  # We're done withdrawing
+    #         vault_balance: uint256 = self.token.balanceOf(self)
+    #         if value <= vault_balance:
+    #             break  # We're done withdrawing
 
-            amountNeeded: uint256 = value - vault_balance
+    #         amountNeeded: uint256 = value - vault_balance
 
-            # NOTE: Don't withdraw more than the debt so that Strategy can still
-            #       continue to work based on the profits it has
-            # NOTE: This means that user will lose out on any profits that each
-            #       Strategy in the queue would return on next harvest, benefiting others
-            amountNeeded = min(amountNeeded, self.strategies[strategy].totalDebt)
-            if amountNeeded == 0:
-                continue  # Nothing to withdraw from this Strategy, try the next one
+    #         # NOTE: Don't withdraw more than the debt so that Strategy can still
+    #         #       continue to work based on the profits it has
+    #         # NOTE: This means that user will lose out on any profits that each
+    #         #       Strategy in the queue would return on next harvest, benefiting others
+    #         amountNeeded = min(amountNeeded, self.strategies[strategy].totalDebt)
+    #         if amountNeeded == 0:
+    #             continue  # Nothing to withdraw from this Strategy, try the next one
 
-            # Force withdraw amount from each Strategy in the order set by governance
-            loss: uint256 = Strategy(strategy).withdraw(amountNeeded)
-            withdrawn: uint256 = self.token.balanceOf(self) - vault_balance
+    #         # Force withdraw amount from each Strategy in the order set by governance
+    #         loss: uint256 = Strategy(strategy).withdraw(amountNeeded)
+    #         withdrawn: uint256 = self.token.balanceOf(self) - vault_balance
 
-            # NOTE: Withdrawer incurs any losses from liquidation
-            if loss > 0:
-                value -= loss
-                totalLoss += loss
-                self._reportLoss(strategy, loss)
+    #         # NOTE: Withdrawer incurs any losses from liquidation
+    #         if loss > 0:
+    #             value -= loss
+    #             totalLoss += loss
+    #             self._reportLoss(strategy, loss)
 
-            # Reduce the Strategy's debt by the amount withdrawn ("realized returns")
-            # NOTE: This doesn't add to returns as it's not earned by "normal means"
-            self.strategies[strategy].totalDebt -= withdrawn
-            self.totalDebt -= withdrawn
+    #         # Reduce the Strategy's debt by the amount withdrawn ("realized returns")
+    #         # NOTE: This doesn't add to returns as it's not earned by "normal means"
+    #         self.strategies[strategy].totalDebt -= withdrawn
+    #         self.totalDebt -= withdrawn
 
-        # NOTE: We have withdrawn everything possible out of the withdrawal queue
-        #       but we still don't have enough to fully pay them back, so adjust
-        #       to the total amount we've freed up through forced withdrawals
-        vault_balance: uint256 = self.token.balanceOf(self)
-        if value > vault_balance:
-            value = vault_balance
-            # NOTE: Burn # of shares that corresponds to what Vault has on-hand,
-            #       including the losses that were incurred above during withdrawals
-            shares = self._sharesForAmount(value + totalLoss)
+    #     # NOTE: We have withdrawn everything possible out of the withdrawal queue
+    #     #       but we still don't have enough to fully pay them back, so adjust
+    #     #       to the total amount we've freed up through forced withdrawals
+    #     vault_balance: uint256 = self.token.balanceOf(self)
+    #     if value > vault_balance:
+    #         value = vault_balance
+    #         # NOTE: Burn # of shares that corresponds to what Vault has on-hand,
+    #         #       including the losses that were incurred above during withdrawals
+    #         shares = self._sharesForAmount(value + totalLoss)
 
-        # NOTE: This loss protection is put in place to revert if losses from
-        #       withdrawing are more than what is considered acceptable.
-        assert totalLoss <= maxLoss * (value + totalLoss) / MAX_BPS
+    #     # NOTE: This loss protection is put in place to revert if losses from
+    #     #       withdrawing are more than what is considered acceptable.
+    #     assert totalLoss <= maxLoss * (value + totalLoss) / MAX_BPS
 
     # Burn shares (full value of what is being withdrawn)
     self.totalSupply -= shares

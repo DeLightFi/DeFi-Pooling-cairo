@@ -8,13 +8,13 @@ export const proofOfOwnership = async (user_address: string, mapping_storage_slo
     const balance_slot_keccak = ethers.keccak256(
         ethers.concat([
             Encorder.encode(
+                ['uint256'],
+                [mapping_storage_slot]
+            ),
+            Encorder.encode(
                 ['address'],
                 [user_address]
             ),
-            Encorder.encode(
-                ['uint256'],
-                [mapping_storage_slot]
-            )
         ])
     )
     return { slot: balance_slot_keccak }
