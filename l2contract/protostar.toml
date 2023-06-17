@@ -1,0 +1,7 @@
+[project]
+protostar-version = "0.13.0"
+
+[contracts]
+ERC4626 = ["src"]
+Ownable = ["ownable/src"]
+

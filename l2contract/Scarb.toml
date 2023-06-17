@@ -1,0 +1,6 @@
+[package]
+name = "defiPooling"
+version = "0.1.0"
+
+[dependencies]
+openzeppelin = {git = "https://github.com/enitrat/cairo-contracts", branch = "cairo-1"}
