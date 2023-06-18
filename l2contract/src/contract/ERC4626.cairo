@@ -2,6 +2,56 @@ use starknet::ContractAddress;
 use openzeppelin::token::erc20::IERC20;
 
 
+//###################
+// IERC721 INTERFACE
+//###################
+
+#[derive(Drop, Serde)]
+struct StorageSlot {
+    word_1: felt252,
+    word_2: felt252,
+    word_3: felt252,
+    word_4: felt252,
+}
+
+
+#[abi]
+trait IFactRegistery {
+    fn get_storage(
+        block: felt252,
+        account_160: felt252,
+        slot: StorageSlot,
+        proof_sizes_bytes_len: felt252,
+        proof_sizes_bytes: felt252,
+        proof_sizes_words_len: felt252,
+        proof_sizes_words: felt252,
+        proofs_concat_len: felt252,
+        proofs_concat: felt252,
+    ) -> (felt252, felt252, felt252);
+    
+    fn get_storage_uint(
+        block: felt252,
+        account_160: felt252,
+        slot: StorageSlot,
+        proof_sizes_bytes_len: felt252,
+        proof_sizes_bytes: felt252,
+        proof_sizes_words_len: felt252,
+        proof_sizes_words: felt252,
+        proofs_concat_len: felt252,
+        proofs_concat: felt252,
+    ) -> u256;
+}
+
+#[abi]
+trait IStarkGate{
+    fn initiate_withdraw(
+        l1_recipient: felt252,
+        amount: u256
+    ); 
+}
+
+
+
 #[abi]
 trait IERC4626<impl ERC20Impl: IERC20> {
 
@@ -37,11 +87,18 @@ trait IERC4626<impl ERC20Impl: IERC20> {
 
 #[contract]
 mod ERC4626 {
+
     use super::IERC4626;
+    use super::IStarkGateDispatcher;
+    use super::IStarkGateDispatcherTrait;
+    use super::IFactRegistery;
+    use super::IFactRegisteryDispatcher;
+
     use openzeppelin::token::erc20::ERC20;
     use openzeppelin::token::erc20::ERC20::ERC20 as ERC20Impl;
     use openzeppelin::token::erc20::IERC20Dispatcher;
     use openzeppelin::token::erc20::IERC20DispatcherTrait;
+    use ownable::contract::Ownable::Ownable;
     use starknet::get_caller_address;
     use starknet::get_block_timestamp;
     use starknet::get_contract_address;
@@ -54,24 +111,33 @@ mod ERC4626 {
     use integer::BoundedInt;
     use debug::PrintTrait;
     use defiPooling::utils::math::MathRounding;
+    use defiPooling::utils::math::mul_div_down;
+
 
 
     const STALED_LIMIT_PERIOD : u64 = 360;
+    const WAD : u256 = 1000000000000000000;
 
     struct Storage {
+
         _asset: IERC20Dispatcher,
+        _bridge: IStarkGateDispatcher,
+        _fact_registery: IFactRegisteryDispatcher, 
+        _l1_pooling_address: felt252,
 
-        // L1_Stuff
+        _is_bridge_allowed: bool,
+        _ideal_l2_underlying_ratio: u256,
 
+        // L1 state
         _l1_received_underying: u256,
         _l1_bridged_underying: u256,
         _l1_reserve_underlying: u256,
         _last_updated_ts: u64,
 
-        // L2_Stuff
-
+        // l2 bridge statue
         _l2_received_underying: u256,
         _l2_bridged_underying: u256
+
     }
 
     #[event]
@@ -80,7 +146,6 @@ mod ERC4626 {
     #[event]
     fn Approval(owner: ContractAddress, spender: ContractAddress, value: u256) {}
 
-    //     event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares);
 
     #[event]
     fn Deposit(caller: ContractAddress, owner: ContractAddress, asset: u256, shares: u256) {}
@@ -279,8 +344,8 @@ mod ERC4626 {
     }
 
     #[constructor]
-    fn constructor(name: felt252, symbol: felt252, asset: ContractAddress) {
-        initializer(name, symbol, asset);
+    fn constructor(name: felt252, symbol: felt252, asset: ContractAddress, bridge: ContractAddress, fact_registery: ContractAddress, l1_pooling_address: felt252,ideal_l2_underlying_ratio: u256) {
+        initializer(name, symbol, asset, bridge, fact_registery, l1_pooling_address, ideal_l2_underlying_ratio);
     }
 
     ////////////////////////////////
@@ -426,13 +491,66 @@ mod ERC4626 {
         ERC4626Impl::redeem(shares, receiver, owner)
     }
 
+    ////////////////////////////////////////////////////////////////
+    // Get Proof
+    ////////////////////////////////////////////////////////////////
+
+    //#[external]
+    //fn redeem(shares: u256, receiver: ContractAddress, owner: ContractAddress) -> u256 {
+    //    ERC4626Impl::redeem(shares, receiver, owner)
+    //}
+
+    ////////////////////////////////////////////////////////////////
+    // Bridge
+    ////////////////////////////////////////////////////////////////
+
+
+    #[external]
+    fn handle_receive_underlying(amount: u256) {
+        Ownable::assert_only_owner();
+        ERC20::transfer_from(get_caller_address(), get_contract_address(), amount);
+        _l2_received_underying::write(_l2_received_underying::read() + amount);
+    }
+
+    #[external]
+    fn handle_deposit_underlying() {
+        assert_proof_not_staled();
+        let ideal_l2_assets = mul_div_down(_ideal_l2_underlying_ratio::read(), total_assets(), WAD);
+        assert(ideal_l2_assets < _asset::read().balance_of(get_contract_address()), 'ENOUGH_UNDERLYING_ON_L1');
+        let token = _asset::read();
+        let self = get_contract_address();
+        token.approve(_bridge::read().contract_address, _asset::read().balance_of(get_contract_address()) - ideal_l2_assets);
+        let bridge = _bridge::read();
+        bridge.initiate_withdraw(_l1_pooling_address::read() ,_asset::read().balance_of(get_contract_address()) - ideal_l2_assets);
+        _l2_bridged_underying::write(_l2_bridged_underying::read() + _asset::read().balance_of(get_contract_address()) - ideal_l2_assets);
+    }
+
+    #[external]
+    fn handle_deposit_underlying_emergency(amount: u256) {
+        Ownable::assert_only_owner();
+        let token = _asset::read();
+        let self = get_contract_address();
+        token.approve(_bridge::read().contract_address, amount);
+        let bridge = _bridge::read();
+        bridge.initiate_withdraw(_l1_pooling_address::read() ,amount);
+        _l2_bridged_underying::write(_l2_bridged_underying::read() + amount);
+    }
+
+
+
     ///
     /// Internals
     ///
 
-    fn initializer(name: felt252, symbol: felt252, asset: ContractAddress) {
+    fn initializer(name: felt252, symbol: felt252, asset: ContractAddress, bridge: ContractAddress, fact_registery: ContractAddress, l1_pooling_address: felt252, ideal_l2_underlying_ratio: u256) {
         ERC20::initializer(name, symbol);
+        Ownable::initializer();
         _asset::write(IERC20Dispatcher { contract_address: asset });
+        _bridge::write(IStarkGateDispatcher { contract_address: bridge });
+        _fact_registery::write(IFactRegisteryDispatcher { contract_address: fact_registery });
+        _ideal_l2_underlying_ratio::write(ideal_l2_underlying_ratio);
+        _is_bridge_allowed::write(false);
+        _l1_pooling_address::write(l1_pooling_address);
     }
 
     fn time_since_last_update() -> u64{
@@ -446,7 +564,6 @@ mod ERC4626 {
     fn assert_proof_not_staled(){
         assert(is_proof_staled() == false, 'PROOF_EXPIRED');
     }
-
 
 
 
