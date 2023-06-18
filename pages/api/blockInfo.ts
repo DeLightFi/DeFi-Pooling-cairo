@@ -120,7 +120,6 @@ export const ethGetStorageAt = async (address: string, slot: string, blockNumber
 
 
 export const proofOfOwnership = async (address: string, token_id: number, contract_address: string, block_number: number, mapping_storage_slot: number) => {
-
     const balance_slot_keccak = ethers.utils.keccak256(
         ethers.utils.concat([
             ethers.utils.defaultAbiCoder.encode(
@@ -135,6 +134,25 @@ export const proofOfOwnership = async (address: string, token_id: number, contra
     )
     return { blockNum: block_number, slot: balance_slot_keccak }
 }
+
+export const proofOfOwnershipL1PoolingBalance = async (l1_pooling_address: string, mapping_storage_slot: number) => {
+    const balance_slot_keccak = ethers.utils.keccak256(
+        ethers.utils.concat([
+            ethers.utils.defaultAbiCoder.encode(
+                ['uint256'],
+                [mapping_storage_slot]
+            ),
+            ethers.utils.defaultAbiCoder.encode(
+                ['address'],
+                [l1_pooling_address]
+            )
+        ])
+    )
+    return { slot: balance_slot_keccak }
+}
+
+
+
 
 export const herodotusProof = async (address: string, blockNum: number) => {
     const herodotus_endpoint = process.env.HERODOTUS_API as string
@@ -154,7 +172,7 @@ export const herodotusProof = async (address: string, blockNum: number) => {
         },
     }
 
-    const response = await fetch(herodotus_endpoint + '?apiKey=' + herodotus_api_key, {
+    const response = await fetch("https://api.herodotus.cloud/" + '?apiKey=' + "00871c08-1a38-49e6-ad50-0755d756b247", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

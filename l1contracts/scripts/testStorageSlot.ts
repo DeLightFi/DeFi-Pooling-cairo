@@ -8,6 +8,16 @@ async function main() {
     const GOV = "0xf37C169A537873425b010A03751F824E02271710"
 
 
+    // YEARN STORAGE 
+    //  "balanceOf": {"type": "HashMap[address, uint256]", "slot": 7},   -> balance of yeanr token for l1Pooling 
+
+// We also need to calculate the value in ETH of  the yearnVault token, 
+
+    // YEARN STORAGE 
+    │// L1Pooling │  receivedEthBalance  │      3       │   0    │      t_uint256      │  0  │ /build-info/2c9591f980c21ec7abc243cffeed83c6.json │      32       │
+    │// L1Pooling │ bridgedOutEthBalance │      4       │   0    │      t_uint256      │  0  │ /build-info/2c9591f980c21ec7abc243cffeed83c6.json │      32 
+
+    // --storage-layout-file 
     const proof = await proofOfOwnership(GOV, 7)
     const blockNumber = await ethers.provider.getBlockNumber()
     const value = await ethGetStorageAt(VAULT, proof.slot, blockNumber)
