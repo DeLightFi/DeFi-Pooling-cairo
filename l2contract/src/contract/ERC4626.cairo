@@ -103,6 +103,7 @@ mod ERC4626 {
     use starknet::get_block_timestamp;
     use starknet::get_contract_address;
     use starknet::ContractAddress;
+    use starknet::send_message_to_l1_syscall;
     use starknet::contract_address::ContractAddressZeroable;
     use zeroable::Zeroable;
     use traits::Into;
@@ -112,11 +113,14 @@ mod ERC4626 {
     use debug::PrintTrait;
     use defiPooling::utils::math::MathRounding;
     use defiPooling::utils::math::mul_div_down;
+    use array::ArrayTrait;
+
 
 
 
     const STALED_LIMIT_PERIOD : u64 = 360;
     const WAD : u256 = 1000000000000000000;
+    const HALF_WAD : u256 = 500000000000000000;
 
     struct Storage {
 
@@ -124,6 +128,8 @@ mod ERC4626 {
         _bridge: IStarkGateDispatcher,
         _fact_registery: IFactRegisteryDispatcher, 
         _l1_pooling_address: felt252,
+        _rebalancing_threshold: u256,
+        _pending_withdrawal: u256,
 
         _is_bridge_allowed: bool,
         _ideal_l2_underlying_ratio: u256,
@@ -146,7 +152,6 @@ mod ERC4626 {
     #[event]
     fn Approval(owner: ContractAddress, spender: ContractAddress, value: u256) {}
 
-
     #[event]
     fn Deposit(caller: ContractAddress, owner: ContractAddress, asset: u256, shares: u256) {}
 
@@ -158,6 +163,20 @@ mod ERC4626 {
         asset: u256,
         shares: u256
     ) {}
+
+    #[event]
+    fn BridgeFromL2(
+        to: felt252,
+        amount: u256,
+    ) {}
+
+    #[event]
+    fn BridgeFromL1(
+        to: felt252,
+        amount: u256,
+    ) {}
+
+    
 
 
     impl ERC4626Impl of IERC4626<ERC20Impl> {
@@ -241,7 +260,6 @@ mod ERC4626 {
         }
 
         fn deposit(assets: u256, receiver: ContractAddress) -> u256 {
-            assert_proof_not_staled();
             let shares = ERC4626Impl::preview_deposit(assets);
             assert(shares != 0.into(), 'ZERO_SHARES');
             let caller = get_caller_address();
@@ -253,9 +271,6 @@ mod ERC4626 {
             shares
         }
 
-        fn max_mint(receiver: ContractAddress) -> u256 {
-            BoundedInt::<u256>::max()
-        }
 
         fn preview_mint(shares: u256) -> u256 {
             // Note: since the total_supply function could be modified from the ERC20 standard here,
@@ -268,7 +283,6 @@ mod ERC4626 {
         }
 
         fn mint(shares: u256, receiver: ContractAddress) -> u256 {
-            assert_proof_not_staled();
             let assets = ERC4626Impl::preview_mint(shares);
             let caller = get_caller_address();
             let token = _asset::read();
@@ -285,6 +299,10 @@ mod ERC4626 {
             ERC4626Impl::convert_to_assets(ERC4626Impl::balance_of(owner))
         }
 
+        fn max_mint(receiver: ContractAddress) -> u256 {
+            BoundedInt::<u256>::max()
+        }
+
         fn preview_withdraw(assets: u256) -> u256 {
             if ERC4626Impl::total_supply() == 0.into() {
                 assets
@@ -294,7 +312,6 @@ mod ERC4626 {
         }
 
         fn withdraw(assets: u256, receiver: ContractAddress, owner: ContractAddress) -> u256 {
-            assert_proof_not_staled();
             let shares = ERC4626Impl::preview_withdraw(assets);
 
             if get_caller_address() != owner {
@@ -323,7 +340,6 @@ mod ERC4626 {
         }
 
         fn redeem(shares: u256, receiver: ContractAddress, owner: ContractAddress) -> u256 {
-            assert_proof_not_staled();
             let assets = ERC4626Impl::preview_redeem(shares);
             assert(assets != 0.into(), 'ZERO_ASSETS');
 
@@ -344,8 +360,8 @@ mod ERC4626 {
     }
 
     #[constructor]
-    fn constructor(name: felt252, symbol: felt252, asset: ContractAddress, bridge: ContractAddress, fact_registery: ContractAddress, l1_pooling_address: felt252,ideal_l2_underlying_ratio: u256) {
-        initializer(name, symbol, asset, bridge, fact_registery, l1_pooling_address, ideal_l2_underlying_ratio);
+    fn constructor(name: felt252, symbol: felt252, asset: ContractAddress, bridge: ContractAddress, fact_registery: ContractAddress, l1_pooling_address: felt252,ideal_l2_underlying_ratio: u256, rebalancing_threshold: u256) {
+        initializer(name, symbol, asset, bridge, fact_registery, l1_pooling_address, ideal_l2_underlying_ratio, rebalancing_threshold);
     }
 
     ////////////////////////////////
@@ -491,6 +507,17 @@ mod ERC4626 {
         ERC4626Impl::redeem(shares, receiver, owner)
     }
 
+
+    ////////////////////////////////////////////////////////////////
+    // Manage contract address
+    ////////////////////////////////////////////////////////////////
+
+    #[external]
+    fn update_l1_pooling(new_l1_pooling: felt252) {
+        Ownable::assert_only_owner();
+        _l1_pooling_address::write(new_l1_pooling);
+    }
+
     ////////////////////////////////////////////////////////////////
     // Get Proof
     ////////////////////////////////////////////////////////////////
@@ -504,67 +531,94 @@ mod ERC4626 {
     // Bridge
     ////////////////////////////////////////////////////////////////
 
-
     #[external]
-    fn handle_receive_underlying(amount: u256) {
-        Ownable::assert_only_owner();
-        ERC20::transfer_from(get_caller_address(), get_contract_address(), amount);
-        _l2_received_underying::write(_l2_received_underying::read() + amount);
-    }
-
-    #[external]
-    fn handle_deposit_underlying() {
-        assert_proof_not_staled();
-        let ideal_l2_assets = mul_div_down(_ideal_l2_underlying_ratio::read(), total_assets(), WAD);
-        assert(ideal_l2_assets < _asset::read().balance_of(get_contract_address()), 'ENOUGH_UNDERLYING_ON_L1');
-        let token = _asset::read();
-        let self = get_contract_address();
-        token.approve(_bridge::read().contract_address, _asset::read().balance_of(get_contract_address()) - ideal_l2_assets);
+    fn handle_bridge_from_l2() {
+        assert(limit_up_l2_assets() < l2_reserve(), 'ENOUGH_UNDERLYING_ON_L1');
         let bridge = _bridge::read();
-        bridge.initiate_withdraw(_l1_pooling_address::read() ,_asset::read().balance_of(get_contract_address()) - ideal_l2_assets);
-        _l2_bridged_underying::write(_l2_bridged_underying::read() + _asset::read().balance_of(get_contract_address()) - ideal_l2_assets);
+        let token = _asset::read();
+        let underlying_to_bridge = l2_reserve() - ideal_l2_reserve_underlying();
+        token.approve(bridge.contract_address, underlying_to_bridge);
+        bridge.initiate_withdraw(_l1_pooling_address::read() ,underlying_to_bridge);
+        _l2_bridged_underying::write(_l2_bridged_underying::read() + underlying_to_bridge);
+        handleRegisterParticipant(0);
+        _last_l2_bridger::write()
+        BridgeFromL2(_l1_pooling_address::read(), underlying_to_bridge);
     }
 
     #[external]
-    fn handle_deposit_underlying_emergency(amount: u256) {
-        Ownable::assert_only_owner();
-        let token = _asset::read();
-        let self = get_contract_address();
-        token.approve(_bridge::read().contract_address, amount);
+    fn handle_bridge_from_l1() {
+        assert(limit_down_l2_assets() > l2_reserve(), 'ENOUGH_UNDERLYING_ON_L2');
+        assert_not_pending_withdrawal();
         let bridge = _bridge::read();
-        bridge.initiate_withdraw(_l1_pooling_address::read() ,amount);
-        _l2_bridged_underying::write(_l2_bridged_underying::read() + amount);
+        let token = _asset::read();
+        let underlying_to_bridge = ideal_l2_reserve_underlying() - l2_reserve();
+        let mut payload: Array<felt252> = ArrayTrait::new();
+        payload.append(underlying_to_bridge.low.into());
+        payload.append(underlying_to_bridge.high.into());
+        send_message_to_l1_syscall(_l1_pooling_address::read(), payload.span());
+        _pending_withdrawal::write(underlying_to_bridge);
+        handleRegisterParticipant(1);
+        _last_l1_bridger::write(get_caller_address());
+        BridgeFromL1(_l1_pooling_address::read(), underlying_to_bridge);
     }
 
+
+    // Starkgate send ETH to an address first, we have to collect funds from receiver, here set to the owner, that can't be this address (accountability)
+    #[external]
+    fn handle_get_available_bridge_money() {
+        Ownable::assert_only_owner();
+        ERC20::transfer_from(Ownable::owner(), get_contract_address(), _pending_withdrawal::read());
+        _l2_received_eth::write(_l2_received_eth::read() + _pending_withdrawal::read());
+        _pending_withdrawal::write(0.into());
+    }
 
 
     ///
     /// Internals
     ///
 
-    fn initializer(name: felt252, symbol: felt252, asset: ContractAddress, bridge: ContractAddress, fact_registery: ContractAddress, l1_pooling_address: felt252, ideal_l2_underlying_ratio: u256) {
+    fn initializer(name: felt252, symbol: felt252, asset: ContractAddress, bridge: ContractAddress, fact_registery: ContractAddress, l1_pooling_address: felt252, ideal_l2_underlying_ratio: u256, rebalancing_threshold: u256) {
         ERC20::initializer(name, symbol);
         Ownable::initializer();
         _asset::write(IERC20Dispatcher { contract_address: asset });
         _bridge::write(IStarkGateDispatcher { contract_address: bridge });
         _fact_registery::write(IFactRegisteryDispatcher { contract_address: fact_registery });
         _ideal_l2_underlying_ratio::write(ideal_l2_underlying_ratio);
+        _rebalancing_threshold::write(rebalancing_threshold);
         _is_bridge_allowed::write(false);
         _l1_pooling_address::write(l1_pooling_address);
     }
 
-    fn time_since_last_update() -> u64{
-        get_block_timestamp() - _last_updated_ts::read()
+    fn ideal_l2_reserve_underlying() -> u256 {
+        mul_div_down(_ideal_l2_underlying_ratio::read(), total_assets(), WAD)
     }
 
-    fn is_proof_staled() -> bool{
-        time_since_last_update() >= STALED_LIMIT_PERIOD
+    fn limit_up_l2_assets() -> u256{
+        ideal_l2_reserve_underlying() + mul_div_down(ideal_l2_reserve_underlying(), _rebalancing_threshold::read(), WAD) 
     }
 
-    fn assert_proof_not_staled(){
-        assert(is_proof_staled() == false, 'PROOF_EXPIRED');
+    fn limit_down_l2_assets() -> u256{
+        ideal_l2_reserve_underlying() - mul_div_down(ideal_l2_reserve_underlying(), _rebalancing_threshold::read(), WAD) 
     }
 
+    fn l2_reserve() -> u256{
+        _asset::read().balance_of(get_contract_address()) 
+    }
 
+    fn l2_to_l1_transit() -> u256 {
+        _l2_bridged_underying::read() - _l1_received_underying::read()
+    }
+
+    fn l1_reserve() -> u256 {
+        _l2_bridged_underying::read()
+    }
+
+    fn l1_to_l2_transit() -> u256 {
+        _l1_bridged_underying::read() - _l2_received_underying::read()
+    }
+
+    fn assert_not_pending_withdrawal() {
+        assert(_pending_withdrawal == 0.into(), 'PENDING_WITHDRAWAL');
+    }
 
 }

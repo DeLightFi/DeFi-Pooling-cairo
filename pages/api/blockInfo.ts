@@ -183,6 +183,16 @@ export const herodotusProof = async (address: string, blockNum: number) => {
     return data;
 }
 
+
+export const herodotusProofStatus = async (taskId: string) => {
+    const response = await fetch("https://api.herodotus.cloud/status/" + `${taskId}` + '?apiKey=' + "00871c08-1a38-49e6-ad50-0755d756b247", {
+        method: "GET",
+    });
+    const data = await response.json();
+    console.log(data)
+    return data;
+}
+
 export const starknetVerify = async (address: string, slot: string, blockNum: number) => {
     const ethProof = await ethGetProof(address, [slot], blockNum)
     const rawProof = ethProof.storageProof[0].proof;
