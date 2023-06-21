@@ -44,9 +44,18 @@ const post = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     const callDataReceivedProof = await starknetVerify(pooling_address, numberToStringWithLeadingZeros(mapping_storage_slot_pooling_received_eth), proof_blocknumber)
     const callDataBridgedProof = await starknetVerify(pooling_address, numberToStringWithLeadingZeros(mapping_storage_slot_pooling_bridged_eth), proof_blocknumber)
 
+
     console.log(callDataBalanceProof)
     console.log(callDataReceivedProof)
     console.log(callDataBridgedProof)
+
+    const yearn_proof = await herodotusProof(yearn_vault_address, proof_blocknumber)
+    const pooling_proof = await herodotusProof(pooling_address, proof_blocknumber)
+
+    console.log(yearn_proof)
+    console.log(pooling_proof)
+    // e4227daf-ff03-45d5-a276-882701f85320
+    // ab786bf1-a2da-4b8a-a523-021471fb5985
 
     return res.status(200).json({})
 }

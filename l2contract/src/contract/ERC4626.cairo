@@ -1,44 +1,25 @@
 use starknet::ContractAddress;
 use openzeppelin::token::erc20::IERC20;
+use array::ArrayTrait;
 
 
-//###################
-// IERC721 INTERFACE
-//###################
-
-#[derive(Drop, Serde)]
-struct StorageSlot {
-    word_1: felt252,
-    word_2: felt252,
-    word_3: felt252,
-    word_4: felt252,
-}
-
+    #[derive(Copy, Drop, Serde)]
+    struct StorageSlot {
+        word_1: felt252,
+        word_2: felt252,
+        word_3: felt252,
+        word_4: felt252,
+    }
 
 #[abi]
 trait IFactRegistery {
-    fn get_storage(
-        block: felt252,
-        account_160: felt252,
-        slot: StorageSlot,
-        proof_sizes_bytes_len: felt252,
-        proof_sizes_bytes: felt252,
-        proof_sizes_words_len: felt252,
-        proof_sizes_words: felt252,
-        proofs_concat_len: felt252,
-        proofs_concat: felt252,
-    ) -> (felt252, felt252, felt252);
-    
     fn get_storage_uint(
         block: felt252,
         account_160: felt252,
         slot: StorageSlot,
-        proof_sizes_bytes_len: felt252,
-        proof_sizes_bytes: felt252,
-        proof_sizes_words_len: felt252,
-        proof_sizes_words: felt252,
-        proofs_concat_len: felt252,
-        proofs_concat: felt252,
+        proof_sizes_bytes: Array<felt252>,
+        proof_sizes_words: Array<felt252>,
+        proofs_concat: Array<felt252>,
     ) -> u256;
 }
 
@@ -93,7 +74,8 @@ mod ERC4626 {
     use super::IStarkGateDispatcherTrait;
     use super::IFactRegistery;
     use super::IFactRegisteryDispatcher;
-
+    use super::IFactRegisteryDispatcherTrait;
+    use super::StorageSlot;
     use openzeppelin::token::erc20::ERC20;
     use openzeppelin::token::erc20::ERC20::ERC20 as ERC20Impl;
     use openzeppelin::token::erc20::IERC20Dispatcher;
@@ -103,19 +85,74 @@ mod ERC4626 {
     use starknet::get_block_timestamp;
     use starknet::get_contract_address;
     use starknet::ContractAddress;
+    use starknet::EthAddress;
+    use starknet::EthAddressIntoFelt252;
     use starknet::send_message_to_l1_syscall;
     use starknet::contract_address::ContractAddressZeroable;
+    use starknet::StorageAccess;
+    use starknet::StorageBaseAddress;
+    use starknet::SyscallResult;
+    use starknet::storage_read_syscall;
+    use starknet::storage_write_syscall;
+    use starknet::storage_address_from_base_and_offset;
+    use traits::{Into, TryInto};
     use zeroable::Zeroable;
-    use traits::Into;
-    use traits::TryInto;
     use option::OptionTrait;
     use integer::BoundedInt;
     use debug::PrintTrait;
     use defiPooling::utils::math::MathRounding;
     use defiPooling::utils::math::mul_div_down;
-    use array::ArrayTrait;
+    use super::ArrayTrait;
 
 
+
+    impl StorageSlotStorageAccess of StorageAccess::<StorageSlot> {
+
+    fn write(address_domain: u32, base: StorageBaseAddress, value: StorageSlot) -> SyscallResult::<()> {
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 0_u8),
+          value.word_1
+        );
+
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 1_u8),
+          value.word_2
+        );
+
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 2_u8),
+          value.word_3
+        );
+
+         storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 3_u8),
+          value.word_4
+        )
+      }
+
+       
+      fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult::<StorageSlot> {
+        Result::Ok(
+          StorageSlot {
+            word_1: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 0_u8))?,
+            word_2: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 1_u8))?,
+            word_3: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 2_u8))?,
+            word_4: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 3_u8))?,
+          }
+        )
+      }
+      
+}
+
+
+
+
+
+    
 
 
     const STALED_LIMIT_PERIOD : u64 = 360;
@@ -123,27 +160,38 @@ mod ERC4626 {
     const HALF_WAD : u256 = 500000000000000000;
 
     struct Storage {
-
         _asset: IERC20Dispatcher,
         _bridge: IStarkGateDispatcher,
         _fact_registery: IFactRegisteryDispatcher, 
-        _l1_pooling_address: felt252,
-        _rebalancing_threshold: u256,
-        _pending_withdrawal: u256,
+        _l1_pooling: felt252,
+        _yearn_vault: felt252,
+        _yearn_token_pricefeed_id: felt252,
 
-        _is_bridge_allowed: bool,
+        // slots
+        _yearn_token_balance_slot: StorageSlot,
+        _pooling_received_underlying_slot: StorageSlot,
+        _pooling_bridged_underlying_slot: StorageSlot,
+
+        // protocol parameters
+        _rebalancing_threshold: u256,
         _ideal_l2_underlying_ratio: u256,
 
-        // L1 state
+
+        // bridge control states
+        _yearn_token_balance: u256,
+        _l2_received_underying: u256,
+        _l2_bridged_underying: u256,
         _l1_received_underying: u256,
         _l1_bridged_underying: u256,
-        _l1_reserve_underlying: u256,
-        _last_updated_ts: u64,
+        _pending_withdrawal: u256,
 
-        // l2 bridge statue
-        _l2_received_underying: u256,
-        _l2_bridged_underying: u256
-
+        // protocol participants
+        _last_l1_bridger: ContractAddress,
+        _last_l1_bridger_timestamp: u64,
+        _last_l2_bridger: ContractAddress,
+        _last_l2_bridger_timestamp: u64,
+        _last_data_prover: ContractAddress,
+        _last_data_prover_timestamp: u64
     }
 
     #[event]
@@ -360,8 +408,20 @@ mod ERC4626 {
     }
 
     #[constructor]
-    fn constructor(name: felt252, symbol: felt252, asset: ContractAddress, bridge: ContractAddress, fact_registery: ContractAddress, l1_pooling_address: felt252,ideal_l2_underlying_ratio: u256, rebalancing_threshold: u256) {
-        initializer(name, symbol, asset, bridge, fact_registery, l1_pooling_address, ideal_l2_underlying_ratio, rebalancing_threshold);
+    fn constructor(
+        name: felt252, 
+        symbol: felt252, 
+        asset: ContractAddress, 
+        bridge: ContractAddress, 
+        fact_registery: ContractAddress,
+        yearn_vault: felt252, 
+        yearn_token_pricefeed_id: felt252, 
+        yearn_token_balance_slot: StorageSlot, 
+        pooling_bridged_underlying_slot: StorageSlot, 
+        pooling_received_underlying_slot: StorageSlot,
+        ideal_l2_underlying_ratio: u256, 
+        rebalancing_threshold: u256) {
+        initializer(name, symbol, asset, bridge, fact_registery, yearn_vault, yearn_token_pricefeed_id, yearn_token_balance_slot, pooling_bridged_underlying_slot, pooling_received_underlying_slot, ideal_l2_underlying_ratio, rebalancing_threshold);
     }
 
     ////////////////////////////////
@@ -412,16 +472,6 @@ mod ERC4626 {
     fn approve(spender: ContractAddress, amount: u256) -> bool {
         ERC4626Impl::approve(spender, amount)
     }
-
-    // #[external]
-    // fn increase_allowance(spender: ContractAddress, added_value: u256) -> bool {
-    //     ERC20::_increase_allowance(spender, added_value)
-    // }
-
-    // #[external]
-    // fn decrease_allowance(spender: ContractAddress, subtracted_value: u256) -> bool {
-    //     ERC20::_decrease_allowance(spender, subtracted_value)
-    // }
 
     ////////////////////////////////////////////////////////////////
     // ERC4626 functions
@@ -506,30 +556,82 @@ mod ERC4626 {
     fn redeem(shares: u256, receiver: ContractAddress, owner: ContractAddress) -> u256 {
         ERC4626Impl::redeem(shares, receiver, owner)
     }
+    
 
 
     ////////////////////////////////////////////////////////////////
-    // Manage contract address
+    // Governance
     ////////////////////////////////////////////////////////////////
 
     #[external]
-    fn update_l1_pooling(new_l1_pooling: felt252) {
+    fn update_l1_pooling(l1_pooling_address: felt252) {
         Ownable::assert_only_owner();
-        _l1_pooling_address::write(new_l1_pooling);
+        _l1_pooling::write(l1_pooling_address);
     }
 
+    #[external]
+    fn update_bridge(bridge: ContractAddress) {
+        Ownable::assert_only_owner();
+        _bridge::write(IStarkGateDispatcher { contract_address: bridge });
+    }
+
+    #[external]
+    fn update_fact_registery(fact_registery: ContractAddress) {
+        Ownable::assert_only_owner();
+        _fact_registery::write(IFactRegisteryDispatcher { contract_address: fact_registery });
+    }
+
+    #[external]
+    fn update_yearn_vault(yearn_vault: felt252) {
+        Ownable::assert_only_owner();
+        _yearn_vault::write(yearn_vault);
+    }
+
+    #[external]
+    fn update_yearn_token_pricefeed_id(yearn_token_pricefeed_id: felt252) {
+        Ownable::assert_only_owner();
+        _yearn_token_pricefeed_id::write(yearn_token_pricefeed_id);
+    }
+
+    #[external]
+    fn update_yearn_token_balance_slot(yearn_token_balance_slot: StorageSlot) {
+        Ownable::assert_only_owner();
+        _yearn_token_balance_slot::write(yearn_token_balance_slot);
+    }
+
+    #[external]
+    fn update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot: StorageSlot) {
+        Ownable::assert_only_owner();
+        _pooling_bridged_underlying_slot::write(pooling_bridged_underlying_slot);
+    }
+
+
+    #[external]
+    fn update_pooling_received_underlying_slot(pooling_received_underlying_slot: StorageSlot) {
+        Ownable::assert_only_owner();
+        _pooling_received_underlying_slot::write(pooling_received_underlying_slot);
+    }
+
+
+    #[external]
+    fn update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio: u256) {
+        Ownable::assert_only_owner();
+        _ideal_l2_underlying_ratio::write(ideal_l2_underlying_ratio);
+    }
+
+
+    #[external]
+    fn update_rebalancing_threshold(rebalancing_threshold: u256) {
+        Ownable::assert_only_owner();
+        _rebalancing_threshold::write(rebalancing_threshold);
+    }
+
+
     ////////////////////////////////////////////////////////////////
-    // Get Proof
+    // Participants
     ////////////////////////////////////////////////////////////////
 
-    //#[external]
-    //fn redeem(shares: u256, receiver: ContractAddress, owner: ContractAddress) -> u256 {
-    //    ERC4626Impl::redeem(shares, receiver, owner)
-    //}
 
-    ////////////////////////////////////////////////////////////////
-    // Bridge
-    ////////////////////////////////////////////////////////////////
 
     #[external]
     fn handle_bridge_from_l2() {
@@ -538,11 +640,16 @@ mod ERC4626 {
         let token = _asset::read();
         let underlying_to_bridge = l2_reserve() - ideal_l2_reserve_underlying();
         token.approve(bridge.contract_address, underlying_to_bridge);
-        bridge.initiate_withdraw(_l1_pooling_address::read() ,underlying_to_bridge);
+        bridge.initiate_withdraw(_l1_pooling::read() ,underlying_to_bridge);
         _l2_bridged_underying::write(_l2_bridged_underying::read() + underlying_to_bridge);
-        handleRegisterParticipant(0);
-        _last_l2_bridger::write()
-        BridgeFromL2(_l1_pooling_address::read(), underlying_to_bridge);
+
+        // we need a second message to tell the amount we need to get from the bridge, as everyone is able to send money to the l1 pooling contract (accountability)
+        let mut payload: Array<felt252> = ArrayTrait::new();
+        payload.append(underlying_to_bridge.low.into());
+        payload.append(underlying_to_bridge.high.into());
+        send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
+
+        BridgeFromL2(_l1_pooling::read(), underlying_to_bridge);
     }
 
     #[external]
@@ -555,12 +662,55 @@ mod ERC4626 {
         let mut payload: Array<felt252> = ArrayTrait::new();
         payload.append(underlying_to_bridge.low.into());
         payload.append(underlying_to_bridge.high.into());
-        send_message_to_l1_syscall(_l1_pooling_address::read(), payload.span());
+        send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
         _pending_withdrawal::write(underlying_to_bridge);
-        handleRegisterParticipant(1);
-        _last_l1_bridger::write(get_caller_address());
-        BridgeFromL1(_l1_pooling_address::read(), underlying_to_bridge);
+        BridgeFromL1(_l1_pooling::read(), underlying_to_bridge);
     }
+
+    #[external]
+    fn submit_all_proof(block: felt252, proof_sizes_bytes_yearn_balance: Array<felt252>, proof_sizes_words_yearn_balance: Array<felt252>, proofs_concat_yearn_balance: Array<felt252>, proof_sizes_bytes_bridged_l1: Array<felt252>, proof_sizes_words_bridged_l1: Array<felt252>, proofs_concat_bridged_l1: Array<felt252>, proof_sizes_bytes_received_l1: Array<felt252>, proof_sizes_words_received_l1: Array<felt252>, proofs_concat_received_l1: Array<felt252>)  {
+        let is_new_balance = submit_proof_yearn_balance(block, proof_sizes_bytes_yearn_balance, proof_sizes_words_yearn_balance, proofs_concat_yearn_balance);
+        let is_new_bridged_amount = submit_proof_bridged_l1(block, proof_sizes_bytes_bridged_l1, proof_sizes_words_bridged_l1, proofs_concat_bridged_l1);
+        let is_new_received_amount = submit_proof_received_l1(block, proof_sizes_bytes_received_l1, proof_sizes_words_received_l1, proofs_concat_received_l1);
+        if(is_new_balance == false ){ // need &&
+            if(is_new_bridged_amount == false){
+                assert(is_new_received_amount == true, 'NOTHING_TO_UPDATE');
+            }
+        }
+        init_stream(get_caller_address());
+    }
+
+    fn submit_proof_yearn_balance(block: felt252,proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> bool {
+        let value = call_hero(block,_yearn_vault::read(), _yearn_token_balance_slot::read(), proof_sizes_bytes, proof_sizes_words, proofs_concat);
+        if(value == _yearn_token_balance::read()){
+            _yearn_token_balance::write(value);
+            true
+        } else {
+            false
+        }
+    }
+
+    fn submit_proof_bridged_l1(block: felt252, proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> bool {
+        let value = call_hero(block, _l1_pooling::read(), _pooling_bridged_underlying_slot::read(), proof_sizes_bytes, proof_sizes_words, proofs_concat);
+        if(value == _l1_received_underying::read()){
+            _l1_bridged_underying::write(value);
+            true
+        } else {
+            false
+        }
+    }
+
+    fn submit_proof_received_l1(block: felt252, proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> bool {
+        let value = call_hero(block, _l1_pooling::read(), _pooling_received_underlying_slot::read(), proof_sizes_bytes, proof_sizes_words, proofs_concat);
+        if(value == _l1_received_underying::read()){
+            _l1_received_underying::write(value);
+            true
+        } else {
+            false
+        }
+    }
+
+
 
 
     // Starkgate send ETH to an address first, we have to collect funds from receiver, here set to the owner, that can't be this address (accountability)
@@ -568,26 +718,42 @@ mod ERC4626 {
     fn handle_get_available_bridge_money() {
         Ownable::assert_only_owner();
         ERC20::transfer_from(Ownable::owner(), get_contract_address(), _pending_withdrawal::read());
-        _l2_received_eth::write(_l2_received_eth::read() + _pending_withdrawal::read());
+        _l2_received_underying::write(_l2_received_underying::read() + _pending_withdrawal::read());
         _pending_withdrawal::write(0.into());
     }
-
 
     ///
     /// Internals
     ///
 
-    fn initializer(name: felt252, symbol: felt252, asset: ContractAddress, bridge: ContractAddress, fact_registery: ContractAddress, l1_pooling_address: felt252, ideal_l2_underlying_ratio: u256, rebalancing_threshold: u256) {
+    fn initializer(
+        name: felt252, 
+        symbol: felt252, 
+        asset: ContractAddress, 
+        bridge: ContractAddress, 
+        fact_registery: ContractAddress,
+        yearn_vault: felt252, 
+        yearn_token_pricefeed_id: felt252, 
+        yearn_token_balance_slot: StorageSlot, 
+        pooling_bridged_underlying_slot: StorageSlot, 
+        pooling_received_underlying_slot: StorageSlot,
+        ideal_l2_underlying_ratio: u256, 
+        rebalancing_threshold: u256) {
+
         ERC20::initializer(name, symbol);
         Ownable::initializer();
         _asset::write(IERC20Dispatcher { contract_address: asset });
-        _bridge::write(IStarkGateDispatcher { contract_address: bridge });
-        _fact_registery::write(IFactRegisteryDispatcher { contract_address: fact_registery });
-        _ideal_l2_underlying_ratio::write(ideal_l2_underlying_ratio);
-        _rebalancing_threshold::write(rebalancing_threshold);
-        _is_bridge_allowed::write(false);
-        _l1_pooling_address::write(l1_pooling_address);
+        update_bridge(bridge);
+        update_fact_registery(fact_registery);
+        update_yearn_vault(yearn_vault);
+        update_yearn_token_pricefeed_id(yearn_token_pricefeed_id);
+        update_yearn_token_balance_slot(yearn_token_balance_slot);
+        update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot);
+        update_pooling_received_underlying_slot(pooling_received_underlying_slot);
+        update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio);
+        update_rebalancing_threshold(rebalancing_threshold);
     }
+
 
     fn ideal_l2_reserve_underlying() -> u256 {
         mul_div_down(_ideal_l2_underlying_ratio::read(), total_assets(), WAD)
@@ -618,7 +784,17 @@ mod ERC4626 {
     }
 
     fn assert_not_pending_withdrawal() {
-        assert(_pending_withdrawal == 0.into(), 'PENDING_WITHDRAWAL');
+        assert(_pending_withdrawal::read() == 0.into(), 'PENDING_WITHDRAWAL');
     }
+
+    fn assert_l1_pooling_register() {
+        assert(_l1_pooling::read().is_zero() == false, 'L1_POOLING_NOT_REGISTER');
+    }
+
+    fn call_hero(block: felt252, account_address: felt252, slot: StorageSlot,proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> u256 {
+        let fact_registery = _fact_registery::read();
+        fact_registery.get_storage_uint(block, account_address, slot, proof_sizes_bytes, proof_sizes_words,proofs_concat)
+    }
+
 
 }

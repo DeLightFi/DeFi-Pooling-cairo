@@ -2,6 +2,7 @@
 protostar-version = "0.13.0"
 
 [contracts]
-ERC4626 = ["src"]
-Ownable = ["ownable/src"]
 
+TestHero = ["testHerodotus/src"]
+Ownable = ["ownable/src"]
+ERC4626 = ["src"]
