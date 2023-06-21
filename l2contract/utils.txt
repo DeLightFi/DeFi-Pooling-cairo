@@ -2,4 +2,6 @@ testHero Class hash: 0x0399fdf39de4a8cb678577bb8ac3a1c3f09337301fff0ebd9c3ddd43c
 
 cmd: protostar declare TestHero --account-address 0x048df7F681Ee077C3F64eF4E5D8b4f3CCBE5A9Fb57f381b05588aF6b8Bf0fF81  --max-fee 1000000000 --network testnet --private-key-path ./pk
 
-cmd protostar deploy 0x0399fdf39de4a8cb678577bb8ac3a1c3f09337301fff0ebd9c3ddd43ca1e57bd --max-fee 1000000000 --network testnet --private-key-path ./pk --account-address 0x048df7F681Ee077C3F64eF4E5D8b4f3CCBE5A9Fb57f381b05588aF6b8Bf0fF81
+cmd protostar deploy 0x011571794ebc7627099ae5f02752c0fcfe1e7a24d7a30daabc9d3d375afdab25 --max-fee 1000000000 --network testnet --private-key-path ./pk --account-address 0x048df7F681Ee077C3F64eF4E5D8b4f3CCBE5A9Fb57f381b05588aF6b8Bf0fF81
+
+//0x011571794ebc7627099ae5f02752c0fcfe1e7a24d7a30daabc9d3d375afdab25

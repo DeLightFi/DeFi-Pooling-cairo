@@ -193,6 +193,7 @@ export const herodotusProofStatus = async (taskId: string) => {
     return data;
 }
 
+
 export const starknetVerify = async (address: string, slot: string, blockNum: number) => {
     const ethProof = await ethGetProof(address, [slot], blockNum)
     const rawProof = ethProof.storageProof[0].proof;

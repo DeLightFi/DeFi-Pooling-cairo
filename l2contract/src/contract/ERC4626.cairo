@@ -2,13 +2,19 @@ use starknet::ContractAddress;
 use openzeppelin::token::erc20::IERC20;
 use array::ArrayTrait;
 
-
     #[derive(Copy, Drop, Serde)]
     struct StorageSlot {
         word_1: felt252,
         word_2: felt252,
         word_3: felt252,
         word_4: felt252,
+    }
+
+    #[derive(Copy, Drop, Serde)]
+    struct ParticipantInfo {
+        user: ContractAddress,
+        share_price: u256,
+        timestamp: u64,
     }
 
 #[abi]
@@ -80,6 +86,12 @@ mod ERC4626 {
     use openzeppelin::token::erc20::ERC20::ERC20 as ERC20Impl;
     use openzeppelin::token::erc20::IERC20Dispatcher;
     use openzeppelin::token::erc20::IERC20DispatcherTrait;
+    use hack_template::interfaces::{
+        pragma::{
+            PragmaOracleDispatcher, PragmaOracleDispatcherTrait, SummaryStatsDispatcher,
+            SummaryStatsDispatcherTrait
+        },
+    };
     use ownable::contract::Ownable::Ownable;
     use starknet::get_caller_address;
     use starknet::get_block_timestamp;
@@ -95,6 +107,7 @@ mod ERC4626 {
     use starknet::storage_read_syscall;
     use starknet::storage_write_syscall;
     use starknet::storage_address_from_base_and_offset;
+
     use traits::{Into, TryInto};
     use zeroable::Zeroable;
     use option::OptionTrait;
@@ -103,6 +116,62 @@ mod ERC4626 {
     use defiPooling::utils::math::MathRounding;
     use defiPooling::utils::math::mul_div_down;
     use super::ArrayTrait;
+    use super::ParticipantInfo;
+
+extern fn contract_address_try_from_felt252(
+    address: felt252
+) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
+
+
+impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
+    fn try_into(self: felt252) -> Option<ContractAddress> {
+        contract_address_try_from_felt252(self)
+    }
+}
+
+    impl ParticipantInfoStorageAccess of StorageAccess::<ParticipantInfo> {
+
+    fn write(address_domain: u32, base: StorageBaseAddress, value: ParticipantInfo) -> SyscallResult::<()> {
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 0_u8),
+          value.user.into()
+        );
+
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 1_u8),
+          value.share_price.low.into()
+        );
+
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 2_u8),
+          value.share_price.high.into()
+        );
+
+         storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 3_u8),
+          value.timestamp.into()
+        )
+      }
+
+       
+      fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult::<ParticipantInfo> {
+        Result::Ok(
+          ParticipantInfo {
+            user: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 0_u8))?.try_into().expect('not ContractAddress'),
+            share_price: u256 {
+    low:  storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 1_u8))?.try_into().expect('not u128'),
+    high: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 2_u8))?.try_into().expect('not u128'),
+    },
+                timestamp: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 3_u8))?.try_into().expect('not u64'),
+          }
+        )
+      }
+      
+}
 
 
 
@@ -149,7 +218,12 @@ mod ERC4626 {
 }
 
 
-
+    #[derive(Copy, Drop, Serde)]
+    struct ParticipantRewards {
+        data_prover: u256,
+        l1_bridger:u256,
+        l2_bridger: u256
+    }
 
 
     
@@ -158,14 +232,16 @@ mod ERC4626 {
     const STALED_LIMIT_PERIOD : u64 = 360;
     const WAD : u256 = 1000000000000000000;
     const HALF_WAD : u256 = 500000000000000000;
+    const PERFORMANCE_FEES : u256 = 10000000000000000;
+    const YEAR_TIMESTAMP : u64 = 31536000;
 
     struct Storage {
         _asset: IERC20Dispatcher,
         _bridge: IStarkGateDispatcher,
         _fact_registery: IFactRegisteryDispatcher, 
+        _pragma: PragmaOracleDispatcher,
         _l1_pooling: felt252,
         _yearn_vault: felt252,
-        _yearn_token_pricefeed_id: felt252,
 
         // slots
         _yearn_token_balance_slot: StorageSlot,
@@ -175,6 +251,9 @@ mod ERC4626 {
         // protocol parameters
         _rebalancing_threshold: u256,
         _ideal_l2_underlying_ratio: u256,
+        _data_provider_fee_share: u256,
+        _l1_bridger_fee_share: u256,
+        _l2_bridger_fee_share: u256,
 
 
         // bridge control states
@@ -186,12 +265,10 @@ mod ERC4626 {
         _pending_withdrawal: u256,
 
         // protocol participants
-        _last_l1_bridger: ContractAddress,
-        _last_l1_bridger_timestamp: u64,
-        _last_l2_bridger: ContractAddress,
-        _last_l2_bridger_timestamp: u64,
-        _last_data_prover: ContractAddress,
-        _last_data_prover_timestamp: u64
+
+        _data_prover: ParticipantInfo,
+        _l1_bridger: ParticipantInfo,
+        _l2_bridger: ParticipantInfo,
     }
 
     #[event]
@@ -279,7 +356,9 @@ mod ERC4626 {
         }
 
         fn total_assets() -> u256 {
-            _asset::read().balance_of(get_contract_address())
+            let current_rewards = participant_rewards();
+            let total_rewards = current_rewards.data_prover + current_rewards.l1_bridger + current_rewards.l2_bridger;
+            l2_reserve() + l2_to_l1_transit() + l1_reserve() + l1_to_l2_transit() - total_rewards
         }
 
         fn convert_to_shares(assets: u256) -> u256 {
@@ -414,14 +493,18 @@ mod ERC4626 {
         asset: ContractAddress, 
         bridge: ContractAddress, 
         fact_registery: ContractAddress,
+        pragma: ContractAddress,
         yearn_vault: felt252, 
-        yearn_token_pricefeed_id: felt252, 
         yearn_token_balance_slot: StorageSlot, 
         pooling_bridged_underlying_slot: StorageSlot, 
         pooling_received_underlying_slot: StorageSlot,
         ideal_l2_underlying_ratio: u256, 
-        rebalancing_threshold: u256) {
-        initializer(name, symbol, asset, bridge, fact_registery, yearn_vault, yearn_token_pricefeed_id, yearn_token_balance_slot, pooling_bridged_underlying_slot, pooling_received_underlying_slot, ideal_l2_underlying_ratio, rebalancing_threshold);
+        rebalancing_threshold: u256,
+        data_provider_fee_share: u256,
+        l2_bridger_fee_share: u256,
+        l1_bridger_fee_share: u256) {
+        initializer(name, symbol, asset, bridge, fact_registery, pragma, yearn_vault, yearn_token_balance_slot, pooling_bridged_underlying_slot, pooling_received_underlying_slot, ideal_l2_underlying_ratio, rebalancing_threshold);
+        update_fee_share(data_provider_fee_share, l2_bridger_fee_share, l1_bridger_fee_share);
     }
 
     ////////////////////////////////
@@ -582,15 +665,16 @@ mod ERC4626 {
     }
 
     #[external]
+    fn update_pragma(pragma: ContractAddress) {
+        Ownable::assert_only_owner();
+        _pragma::write(PragmaOracleDispatcher { contract_address: pragma });
+    }
+
+
+    #[external]
     fn update_yearn_vault(yearn_vault: felt252) {
         Ownable::assert_only_owner();
         _yearn_vault::write(yearn_vault);
-    }
-
-    #[external]
-    fn update_yearn_token_pricefeed_id(yearn_token_pricefeed_id: felt252) {
-        Ownable::assert_only_owner();
-        _yearn_token_pricefeed_id::write(yearn_token_pricefeed_id);
     }
 
     #[external]
@@ -626,12 +710,31 @@ mod ERC4626 {
         _rebalancing_threshold::write(rebalancing_threshold);
     }
 
+    #[external]
+    fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share : u256, l2_bridger_fee_share: u256) {
+        Ownable::assert_only_owner();
+        assert(data_provider_fee_share + l1_bridger_fee_share + l2_bridger_fee_share == WAD, 'WRONG_FEE_SHARE_ALLOC');
+        _data_provider_fee_share::write(data_provider_fee_share);
+        _l1_bridger_fee_share::write(l1_bridger_fee_share);
+        _l2_bridger_fee_share::write(l2_bridger_fee_share);
+    }
+
+
+
 
     ////////////////////////////////////////////////////////////////
     // Participants
     ////////////////////////////////////////////////////////////////
 
-
+    #[view]
+    fn participant_rewards() -> ParticipantRewards {
+        let available_underlyings_data_prover = performance_since_participation(_data_prover::read());
+        ParticipantRewards {
+            data_prover: mul_div_down(due_underlying(_data_prover::read()), _data_provider_fee_share::read(),WAD),
+            l1_bridger: mul_div_down(due_underlying(_l1_bridger::read()), _l1_bridger_fee_share::read(), WAD),
+            l2_bridger: mul_div_down(due_underlying(_l2_bridger::read()), _l2_bridger_fee_share::read(), WAD)
+        }
+    }
 
     #[external]
     fn handle_bridge_from_l2() {
@@ -648,7 +751,7 @@ mod ERC4626 {
         payload.append(underlying_to_bridge.low.into());
         payload.append(underlying_to_bridge.high.into());
         send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
-
+        init_stream(3, get_caller_address());
         BridgeFromL2(_l1_pooling::read(), underlying_to_bridge);
     }
 
@@ -664,6 +767,7 @@ mod ERC4626 {
         payload.append(underlying_to_bridge.high.into());
         send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
         _pending_withdrawal::write(underlying_to_bridge);
+        init_stream(2, get_caller_address());
         BridgeFromL1(_l1_pooling::read(), underlying_to_bridge);
     }
 
@@ -677,7 +781,7 @@ mod ERC4626 {
                 assert(is_new_received_amount == true, 'NOTHING_TO_UPDATE');
             }
         }
-        init_stream(get_caller_address());
+        init_stream(1, get_caller_address());
     }
 
     fn submit_proof_yearn_balance(block: felt252,proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> bool {
@@ -732,8 +836,8 @@ mod ERC4626 {
         asset: ContractAddress, 
         bridge: ContractAddress, 
         fact_registery: ContractAddress,
+        pragma: ContractAddress,
         yearn_vault: felt252, 
-        yearn_token_pricefeed_id: felt252, 
         yearn_token_balance_slot: StorageSlot, 
         pooling_bridged_underlying_slot: StorageSlot, 
         pooling_received_underlying_slot: StorageSlot,
@@ -745,13 +849,25 @@ mod ERC4626 {
         _asset::write(IERC20Dispatcher { contract_address: asset });
         update_bridge(bridge);
         update_fact_registery(fact_registery);
+        update_pragma(pragma);
         update_yearn_vault(yearn_vault);
-        update_yearn_token_pricefeed_id(yearn_token_pricefeed_id);
         update_yearn_token_balance_slot(yearn_token_balance_slot);
         update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot);
         update_pooling_received_underlying_slot(pooling_received_underlying_slot);
         update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio);
         update_rebalancing_threshold(rebalancing_threshold);
+    }
+
+
+
+    // No pricefeed for Y-ETH/ETH yet
+    fn get_yield_price() -> felt252 {
+        let oracle = _pragma::read();
+        let (price, decimals, last_updated_timestamp, num_sources_aggregated) = oracle.get_spot_median('ETH/USD');
+        return price;
+    }
+    fn convert_l1_shares_to_underlying(share_amount: u256) -> u256 {
+       share_amount
     }
 
 
@@ -796,5 +912,71 @@ mod ERC4626 {
         fact_registery.get_storage_uint(block, account_address, slot, proof_sizes_bytes, proof_sizes_words,proofs_concat)
     }
 
+    fn share_price_underlying() -> u256 {
+        convert_to_shares(WAD)
+    }
 
+    fn performance_since_participation(participant: ParticipantInfo) -> u256 {
+        if(share_price_underlying() <= participant.share_price){
+            0.into()
+        } else {
+            participant.share_price - share_price_underlying()
+        }
+    }
+
+    fn timestamp_since_participation(participant: ParticipantInfo) -> u64 {
+        get_block_timestamp() - participant.timestamp
+    }
+
+    fn due_underlying(participant: ParticipantInfo) -> u256 {
+        let performance_fees = mul_div_down(performance_since_participation(participant), PERFORMANCE_FEES,WAD) ;
+        let zero_u256 : u256 = 0;
+        if(performance_fees==0){
+            0
+        } else{
+            mul_div_down(performance_fees, u256 {low: timestamp_since_participation(participant).into(), high: 0}, u256 {low: YEAR_TIMESTAMP.into(), high: 0})
+        }
+        
+    }
+
+  fn init_stream(participant_type: felt252, caller:ContractAddress) {
+        let current_rewards = participant_rewards();
+        let current_timestamp = get_block_timestamp();
+
+        if(participant_type == 1){
+            // data provers
+            if(_data_prover::read().user.is_zero() == false){
+                ERC20::_mint(_data_prover::read().user, convert_to_shares(current_rewards.data_prover));
+            } 
+            _data_prover::write(
+            ParticipantInfo{
+                user: caller,
+                share_price: share_price_underlying(),
+                timestamp: current_timestamp
+            });
+        } else {
+            if(participant_type == 2){
+                // bridgers 
+                if(_l1_bridger::read().user.is_zero() == false){
+                    ERC20::_mint(_l1_bridger::read().user, convert_to_shares(current_rewards.l1_bridger));
+                } 
+                _l1_bridger::write(
+                ParticipantInfo{
+                    user: caller,
+                    share_price: share_price_underlying(),
+                    timestamp: current_timestamp
+                });
+            } else {
+                if(_l2_bridger::read().user.is_zero() == false){
+                    ERC20::_mint(_l2_bridger::read().user, convert_to_shares(current_rewards.l2_bridger));
+                } 
+                _l2_bridger::write(
+                ParticipantInfo{
+                    user: caller,
+                    share_price: share_price_underlying(),
+                    timestamp: current_timestamp
+                });
+            }   
+        }
+    }
 }

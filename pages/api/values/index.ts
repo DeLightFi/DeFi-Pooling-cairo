@@ -17,16 +17,11 @@ function numberToStringWithLeadingZeros(number: number): string {
 }
 
 const post = async (req: NextApiRequest, res: NextApiResponse<any>) => {
-
     // get latest block number
     const proof_blocknumber = await getCurrentBlockNum()
-
     const proofYeanrBalance = await proofOfOwnershipL1PoolingBalance(pooling_address, mapping_storage_slot_yearn_balance)
     if (!proofYeanrBalance) return res.status(500).json([])
     console.log(proofYeanrBalance)
-
-
-
     // Get Values
     const balanceProofResponse = await ethGetProof(yearn_vault_address, [proofYeanrBalance.slot], proof_blocknumber)
     const balancedProofValue = ethers.BigNumber.from(balanceProofResponse.storageProof[0].value).toString();
@@ -39,48 +34,45 @@ const post = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     const bridgedProofResponse = await ethGetProof(pooling_address, [mapping_storage_slot_pooling_bridged_eth.toString()], proof_blocknumber)
     const bridgedProofValue = ethers.BigNumber.from(bridgedProofResponse.storageProof[0].value).toString();
     console.log(bridgedProofValue)
+    return res.status(200).json({
+        proof_blocknumber: proof_blocknumber,
+        balancedProofValue: balancedProofValue,
+        receivedProofValue: receivedProofValue,
+        bridgedProofValue: bridgedProofValue
+    })
+}
+
+
+const get = async (req: NextApiRequest, res: NextApiResponse<any>) => {
+    let _proof_blocknumber: string;
+    if (typeof req.query.block === 'string') {
+        _proof_blocknumber = req.query.block;
+    } else if (Array.isArray(req.query.block)) {
+        // Decide how to handle multiple values, such as taking the first value
+        _proof_blocknumber = req.query.block[0];
+    } else {
+        // Handle the case where taskId is not provided
+        return res.status(200).json({ status: "error" })
+    }
+    // get latest block number
+    const proof_blocknumber = parseFloat(_proof_blocknumber)
+
+    const proofYeanrBalance = await proofOfOwnershipL1PoolingBalance(pooling_address, mapping_storage_slot_yearn_balance)
+    if (!proofYeanrBalance) return res.status(500).json([])
+    console.log(proofYeanrBalance)
 
     const callDataBalanceProof = await starknetVerify(pooling_address, proofYeanrBalance.slot, proof_blocknumber)
     const callDataReceivedProof = await starknetVerify(pooling_address, numberToStringWithLeadingZeros(mapping_storage_slot_pooling_received_eth), proof_blocknumber)
     const callDataBridgedProof = await starknetVerify(pooling_address, numberToStringWithLeadingZeros(mapping_storage_slot_pooling_bridged_eth), proof_blocknumber)
 
+    return res.status(200).json({
 
-    console.log(callDataBalanceProof)
-    console.log(callDataReceivedProof)
-    console.log(callDataBridgedProof)
-
-    const yearn_proof = await herodotusProof(yearn_vault_address, proof_blocknumber)
-    const pooling_proof = await herodotusProof(pooling_address, proof_blocknumber)
-
-    console.log(yearn_proof)
-    console.log(pooling_proof)
-    // e4227daf-ff03-45d5-a276-882701f85320
-    // ab786bf1-a2da-4b8a-a523-021471fb5985
-
-    return res.status(200).json({})
+        callDataBalanceProof: callDataBalanceProof,
+        callDataReceivedProof: callDataReceivedProof,
+        callDataBridgedProof: callDataBridgedProof
+    })
 }
 
-
-const get = async (req: NextApiRequest, res: NextApiResponse<any>) => {
-    let taskId: string;
-    if (typeof req.query.taskId === 'string') {
-        taskId = req.query.taskId;
-    } else if (Array.isArray(req.query.taskId)) {
-        // Decide how to handle multiple values, such as taking the first value
-        taskId = req.query.taskId[0];
-    } else {
-        // Handle the case where taskId is not provided
-        taskId = ''; // or any default value you prefer
-    }
-
-    console.log("quoting task status")
-    console.log(taskId)
-
-    const result = await herodotusProofStatus(taskId)
-    const status = result.taskStatus
-    const resultCall = { status }
-    return res.status(200).json(resultCall)
-}
 
 export default function handler(
     req: NextApiRequest,
