@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers'
-import { Data } from "../utils/data"
+import { Data } from "../../utils/data"
 
 const quicknode_endpoint = process.env.QUICKNODE_API as string
 

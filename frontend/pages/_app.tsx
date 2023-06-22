@@ -32,7 +32,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <StarknetConfig connectors={connectors}>
 
         <Head>
-          <title> Mirror - Bringing L1 DeFi to Starknet</title >
+          <title>Mirror - Bringing L1 DeFi to Starknet</title >
         </Head >
         <ThemeProvider theme={theme}>
           <GlobalStyle />
