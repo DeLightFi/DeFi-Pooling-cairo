@@ -365,7 +365,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
             if ERC20::_total_supply::read() == 0.into() {
                 assets
             } else {
-                (assets * ERC20::_total_supply::read()) / ERC4626Impl::total_assets()
+                u256 {low: (assets * ERC20::_total_supply::read()).low / ERC4626Impl::total_assets().low, high: 0_u128}   
             }
         }
 
@@ -374,7 +374,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
             if supply == 0.into() {
                 shares
             } else {
-                (shares * ERC4626Impl::total_assets()) / supply
+                u256 {low: (shares * ERC4626Impl::total_assets()).low / supply.low, high: 0_u128} 
             }
         }
 
