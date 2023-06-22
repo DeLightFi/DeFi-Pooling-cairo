@@ -1,6 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+interface IStarknetCore {
+    function sendMessageToL2(
+        uint256 toAddress,
+        uint256 selector,
+        uint256[] calldata payload
+    ) external payable returns (bytes32, uint256);
+
+    function consumeMessageFromL2(
+        uint256 fromAddress,
+        uint256[] calldata payload
+    ) external returns (bytes32);
+
+    function l2ToL1Messages(bytes32 msgHash) external view returns (uint256);
+}
+
 interface IVault {
     function deposit(
         uint256 amount,
@@ -12,10 +27,14 @@ interface IVault {
         address recipient,
         uint256 maxLoss
     ) external returns (uint256);
+
+    function _sharesForAmount(uint256 amount) external view returns (uint256);
 }
 
 interface IBridge {
     function deposit(uint256 amount, uint256 l2Recipient) external payable;
+
+    function withdraw(uint256 amount) external;
 }
 
 interface IWETH {
@@ -55,62 +74,95 @@ contract Ownable {
 
 contract L1Pooling is Ownable {
     uint256 public l2Address;
-    address public starkgateBridge;
+    IBridge public starkgateBridge;
     uint256 public receivedEthBalance;
     uint256 public bridgedOutEthBalance;
     IWETH private weth;
-    address public vault;
+    IVault public vault;
     address public admin;
+    IStarknetCore private starknetCore;
 
-    event Deposit(address indexed sender, uint256 value);
-    event WithdrawAndBridge(uint256 indexed l2Recipient, uint256 value);
+    event WithdrawBridgeDepositYield(uint256 amount);
+    event WithdrawYieldDepositBridge(uint256 amount);
 
     constructor(
         uint256 _l2Address,
         address _starkgateBridge,
         address _wrappedEth,
-        address _vault
+        address _vault,
+        address _starkgateCore
     ) {
         l2Address = _l2Address;
-        starkgateBridge = _starkgateBridge;
+        starkgateBridge = IBridge(_starkgateBridge);
         weth = IWETH(_wrappedEth);
-        vault = _vault;
+        vault = IVault(_vault);
         admin = msg.sender;
+        starknetCore = IStarknetCore(_starkgateCore);
     }
 
     receive() external payable {}
 
     fallback() external payable {}
 
-    function handleDeposit() external onlyOwner {
-        // Deposit the maximum balance of ETH in the WETH contract and deposit to yearn vault
-        uint256 maxBalance = address(this).balance;
-        if (maxBalance > 0) {
-            receivedEthBalance += maxBalance;
-            weth.deposit{value: maxBalance}();
-            weth.approve(vault, maxBalance);
-            IVault(vault).deposit(maxBalance, address(this));
-            emit Deposit(msg.sender, maxBalance);
-        }
+    // function handleDeposit() external onlyOwner {
+    //     // Deposit the maximum balance of ETH in the WETH contract and deposit to yearn vault
+    //     uint256 maxBalance = address(this).balance;
+    //     if (maxBalance > 0) {
+    //         receivedEthBalance += maxBalance;
+    //         weth.deposit{value: maxBalance}();
+    //         weth.approve(vault, maxBalance);
+    //         vault.deposit(maxBalance, address(this));
+    //         emit Deposit(msg.sender, maxBalance);
+    //     }
+    // }
+
+    // function handleWithdraw(uint256 amount) external payable onlyOwner {
+    //     uint256 value = vault.withdraw(amount, address(this), 1);
+    //     weth.withdraw(value);
+    //     bridgedOutEthBalance += value;
+    //     require(msg.value > 0, "No fees Provided");
+
+    //     starkgateBridge.deposit{value: value + msg.value}(value, l2Address);
+    //     emit WithdrawAndBridge(l2Address, value);
+    // }
+
+    function handleConsumeReceive(uint256 amount) external {
+        uint256[] memory payload = new uint256[](3);
+        payload[0] = 1;
+        payload[1] = amount;
+        payload[2] = 0;
+        starknetCore.consumeMessageFromL2(l2Address, payload);
+        starkgateBridge.withdraw(amount);
+        receivedEthBalance += amount;
+        weth.deposit{value: amount}();
+        weth.approve(address(vault), amount);
+        IVault(vault).deposit(amount, address(this));
+        emit WithdrawBridgeDepositYield(amount);
     }
 
-    function handleWithdraw(uint256 amount) external payable onlyOwner {
-        uint256 value = IVault(vault).withdraw(amount, address(this), 1);
+    function handleConsumeBridge(uint256 amount) external payable {
+        require(msg.value > 0, "No fees Provided");
+        uint256[] memory payload = new uint256[](3);
+        payload[0] = 2;
+        payload[1] = amount;
+        payload[2] = 0;
+        starknetCore.consumeMessageFromL2(l2Address, payload);
+        uint256 shares_to_withdraw = vault._sharesForAmount(amount);
+        uint256 value = IVault(vault).withdraw(
+            shares_to_withdraw,
+            address(this),
+            1
+        );
         weth.withdraw(value);
         bridgedOutEthBalance += value;
-        require(msg.value > 0, "No fees Provided");
-
-        IBridge(starkgateBridge).deposit{value: value + msg.value}(
-            value,
-            l2Address
-        );
-        emit WithdrawAndBridge(l2Address, value);
+        starkgateBridge.deposit{value: value + msg.value}(value, l2Address);
+        emit WithdrawYieldDepositBridge(amount);
     }
 
     function updateBridgeAddress(
         address _new_bridge_address
     ) external onlyOwner {
-        starkgateBridge = _new_bridge_address;
+        starkgateBridge = IBridge(_new_bridge_address);
     }
 
     function updateL2Address(uint256 _l2Address) external onlyOwner {
@@ -118,6 +170,6 @@ contract L1Pooling is Ownable {
     }
 
     function updateVaultAddress(address _vault) external onlyOwner {
-        vault = _vault;
+        vault = IVault(_vault);
     }
 }

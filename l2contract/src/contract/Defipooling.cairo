@@ -73,7 +73,7 @@ trait IERC4626<impl ERC20Impl: IERC20> {
 }
 
 #[contract]
-mod ERC4626 {
+mod Defipooling {
 
     use super::IERC4626;
     use super::IStarkGateDispatcher;
@@ -748,6 +748,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
 
         // we need a second message to tell the amount we need to get from the bridge, as everyone is able to send money to the l1 pooling contract (accountability)
         let mut payload: Array<felt252> = ArrayTrait::new();
+        payload.append(0);
         payload.append(underlying_to_bridge.low.into());
         payload.append(underlying_to_bridge.high.into());
         send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
@@ -763,6 +764,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         let token = _asset::read();
         let underlying_to_bridge = ideal_l2_reserve_underlying() - l2_reserve();
         let mut payload: Array<felt252> = ArrayTrait::new();
+        payload.append(1);
         payload.append(underlying_to_bridge.low.into());
         payload.append(underlying_to_bridge.high.into());
         send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
@@ -776,9 +778,9 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         let is_new_balance = submit_proof_yearn_balance(block, proof_sizes_bytes_yearn_balance, proof_sizes_words_yearn_balance, proofs_concat_yearn_balance);
         let is_new_bridged_amount = submit_proof_bridged_l1(block, proof_sizes_bytes_bridged_l1, proof_sizes_words_bridged_l1, proofs_concat_bridged_l1);
         let is_new_received_amount = submit_proof_received_l1(block, proof_sizes_bytes_received_l1, proof_sizes_words_received_l1, proofs_concat_received_l1);
-        if(is_new_balance == false ){ // need &&
-            if(is_new_bridged_amount == false){
-                assert(is_new_received_amount == true, 'NOTHING_TO_UPDATE');
+        if(!is_new_balance ){ // need &&
+            if(!is_new_bridged_amount){
+                assert(is_new_received_amount, 'NOTHING_TO_UPDATE');
             }
         }
         init_stream(1, get_caller_address());
@@ -904,7 +906,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     }
 
     fn assert_l1_pooling_register() {
-        assert(_l1_pooling::read().is_zero() == false, 'L1_POOLING_NOT_REGISTER');
+        assert(!_l1_pooling::read().is_zero(), 'L1_POOLING_NOT_REGISTER');
     }
 
     fn call_hero(block: felt252, account_address: felt252, slot: StorageSlot,proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> u256 {
@@ -945,7 +947,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
 
         if(participant_type == 1){
             // data provers
-            if(_data_prover::read().user.is_zero() == false){
+            if(!_data_prover::read().user.is_zero()){
                 ERC20::_mint(_data_prover::read().user, convert_to_shares(current_rewards.data_prover));
             } 
             _data_prover::write(
@@ -957,7 +959,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         } else {
             if(participant_type == 2){
                 // bridgers 
-                if(_l1_bridger::read().user.is_zero() == false){
+                if(!_l1_bridger::read().user.is_zero()){
                     ERC20::_mint(_l1_bridger::read().user, convert_to_shares(current_rewards.l1_bridger));
                 } 
                 _l1_bridger::write(
@@ -967,7 +969,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
                     timestamp: current_timestamp
                 });
             } else {
-                if(_l2_bridger::read().user.is_zero() == false){
+                if(!_l2_bridger::read().user.is_zero()){
                     ERC20::_mint(_l2_bridger::read().user, convert_to_shares(current_rewards.l2_bridger));
                 } 
                 _l2_bridger::write(
