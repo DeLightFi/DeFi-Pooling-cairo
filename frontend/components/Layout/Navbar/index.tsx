@@ -10,9 +10,7 @@ const Navbar = ({ connection, setConnection, setProvider, setAddress }) => {
         const connection = await connect({
             modalWalletAppearance: "all"
         });
-        console.log(connection)
         if (connection && connection.isConnected) {
-            console.log("there", connection)
             setConnection(connection);
             setProvider(connection.account);
             setAddress(connection.selectedAddress);
@@ -25,8 +23,6 @@ const Navbar = ({ connection, setConnection, setProvider, setAddress }) => {
         setProvider(undefined);
         setAddress('');
     }
-
-    console.log(connection === null || connection === undefined);
 
     return (
         <Container>

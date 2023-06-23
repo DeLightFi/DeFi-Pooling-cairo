@@ -52,9 +52,46 @@ export const Container = styled.div`
   .chart{
     height: 55%;
     width: 100%;
-
+    display: flex;
+    position: relative;
+    
     padding-bottom: 1%;
     border-bottom: 1px solid #dadada30;
+
+    .apy{
+      position: absolute;
+      top: 0;
+      right: 0;
+
+      padding: 1.5% 3%;
+
+      div{
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: flex-end;
+        gap: 5px;
+        
+        span:nth-child(1){
+          font-size: 0.8vw;
+          font-weight: 600;
+          color: #dadada60;
+        }
+
+        span:nth-child(2){
+          font-size: 3vw;
+          line-height: 1;
+          font-weight: 500;
+          color: #e6e452;
+        }
+      }
+    }
+
+    .rechart{
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
   }
 
   .stats{
