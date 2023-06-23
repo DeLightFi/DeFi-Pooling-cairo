@@ -14,9 +14,8 @@ mod Ownable {
     fn OwnershipTransferred(previous_owner: ContractAddress, new_owner: ContractAddress) {}
 
     #[internal]
-    fn initializer() {
-        let caller: ContractAddress = get_caller_address();
-        _transfer_ownership(caller);
+    fn initializer(owner: ContractAddress) {
+        _transfer_ownership(owner);
     }
 
     #[internal]

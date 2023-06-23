@@ -28,3 +28,15 @@ It is super gas efficient and there are even optimal scenarios where the yields 
 # Implementation
 
 ![Image 2](url-to-your-image2)
+
+# Proof
+
+Get value, L2 calldata and task id from herodotus (to prove l1 states for current block)
+
+curl -X POST http://localhost:3000/api/herodotus \
+  -H "Content-Type: application/json" 
+
+Get Task status
+
+curl -X GET "http://localhost:3000/api/herodotus?taskId=<53aafb2f-6901-40fd-a47e-add76f204683>"
+replace with the desired taskId

@@ -49,6 +49,8 @@ mod TestHero {
         use super::StorageSlot;
     use array::ArrayTrait;
         use super::ContractAddress;
+        
+    use option::OptionTrait;
 
 
     const STALED_LIMIT_PERIOD : u64 = 360;
@@ -98,19 +100,84 @@ mod TestHero {
       
 }
 
+extern fn contract_address_try_from_felt252(
+    address: felt252
+) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
+
+
+impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
+    fn try_into(self: felt252) -> Option<ContractAddress> {
+        contract_address_try_from_felt252(self)
+    }
+}
+
+
+    #[derive(Copy, Drop, Serde)]
+    struct ParticipantInfo {
+        user: ContractAddress,
+        share_price: u256,
+        timestamp: u64,
+    }
+
+    impl ParticipantInfoStorageAccess of StorageAccess::<ParticipantInfo> {
+
+    fn write(address_domain: u32, base: StorageBaseAddress, value: ParticipantInfo) -> SyscallResult::<()> {
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 0_u8),
+          value.user.into()
+        );
+
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 1_u8),
+          value.share_price.low.into()
+        );
+
+        storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 2_u8),
+          value.share_price.high.into()
+        );
+
+         storage_write_syscall(
+          address_domain,
+          storage_address_from_base_and_offset(base, 3_u8),
+          value.timestamp.into()
+        )
+      }
+
+       
+      fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult::<ParticipantInfo> {
+        Result::Ok(
+          ParticipantInfo {
+            user: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 0_u8))?.try_into().expect('not ContractAddress'),
+            share_price: u256 {
+    low:  storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 1_u8))?.try_into().expect('not u128'),
+    high: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 2_u8))?.try_into().expect('not u128'),
+    },
+                timestamp: storage_read_syscall(address_domain,storage_address_from_base_and_offset(base, 3_u8))?.try_into().expect('not u64'),
+          }
+        )
+      }
+      
+}
+
 
     struct Storage {
         _yearn_vault: felt252,
         _yearn_token_balance_slot: StorageSlot,
-        _fact_registery: IFactRegisteryDispatcher
+        _fact_registery: IFactRegisteryDispatcher,
+        _mich: ParticipantInfo
     }
 
     #[constructor]
     fn constructor(
         yearn_vault: felt252, 
         yearn_token_balance_slot: StorageSlot, 
-        fact_registery: ContractAddress) {
-        initializer(yearn_vault, yearn_token_balance_slot, fact_registery);
+        fact_registery: ContractAddress,
+        mich: ParticipantInfo) {
+        initializer(yearn_vault, yearn_token_balance_slot, fact_registery, mich);
     }
 
 
@@ -135,15 +202,28 @@ mod TestHero {
         fact_registery.get_storage_uint(block, _yearn_vault::read(), _yearn_token_balance_slot::read(), proof_sizes_bytes, proof_sizes_words,proofs_concat )
     }
 
+    #[external]
+    fn convert_to_shares()  {
+        if WAD == 0.into() {
+                let z = 3;
+            } else {
+                let z = 4;
+            }
+    }
+
+
    
 
     fn initializer(
         yearn_vault: felt252, 
         yearn_token_balance_slot: StorageSlot, 
-        fact_registery: ContractAddress) {
+        fact_registery: ContractAddress,
+        mich: ParticipantInfo) {
         update_yearn_vault(yearn_vault);
         update_yearn_token_balance_slot(yearn_token_balance_slot);
         update_fact_registery(fact_registery);
+        let yo = _mich::read();
+        _mich::write(mich);
     }
 
 }

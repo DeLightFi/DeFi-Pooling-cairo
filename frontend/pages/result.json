@@ -1,0 +1,202 @@
+{
+    "proof_blocknumber": 9227156,
+    "balancedProofValue": "10000000000000000",
+    "receivedProofValue": "20000000000000000",
+    "bridgedProofValue": "10000000000000000",
+    "callDataBalanceProof": {
+        "slot": [
+            "0x72756281b0830a22",
+            "0x170eb9a5320a4b30",
+            "0xae3b228918eb21d4",
+            "0x9ecad87ad662b3a1"
+        ],
+        "proof_sizes_bytes": [
+            "0x114"
+        ],
+        "proof_sizes_words": [
+            "0x23"
+        ],
+        "proofs_concat": [
+            "0xf90111a0e73445df",
+            "0x6511fe1039a1a978",
+            "0xccde0450c530da90",
+            "0x07e1835d26930f6f",
+            "0xe39cea2780a0f4b2",
+            "0x96f6428f1b45087b",
+            "0x102fb10f330b5d9d",
+            "0x1263dbcbf7965996",
+            "0x971f9e5794e480a0",
+            "0xaf1b5e974e059756",
+            "0x584ba56e7b6084b8",
+            "0xff697d133908a8c5",
+            "0x4279fd0351c5e8dd",
+            "0x808080a05ae352f1",
+            "0x0cad28d279980443",
+            "0x94cd44b12557251d",
+            "0x36699d95c4ceffb1",
+            "0xe61d3dbc80a074b5",
+            "0x60eca8469766ee87",
+            "0x8bc0d1383f02eb22",
+            "0xd4b24b5595bac6c9",
+            "0xb18a6b5a20c5a0e0",
+            "0x8005e64a77ff8d65",
+            "0xeb03932237d26083",
+            "0xddd115bf30d6483e",
+            "0x4cf2e90c45b7fea0",
+            "0xe55d39db9ed335ef",
+            "0xac4a6329f543668a",
+            "0x9525192b99329ae5",
+            "0xe3ea07e9fae0d009",
+            "0x8080a04cf87498d0",
+            "0xc50d19de02329d8a",
+            "0xa8dd32f7e1b0fca6",
+            "0x381d5cc83f8d6820",
+            "0x69491080"
+        ]
+    },
+    "callDataReceivedProof": {
+        "slot": [
+            "0x00",
+            "0x00",
+            "0x00",
+            "0x03"
+        ],
+        "proof_sizes_bytes": [
+            "0x114",
+            "0x2b"
+        ],
+        "proof_sizes_words": [
+            "0x23",
+            "0x6"
+        ],
+        "proofs_concat": [
+            "0xf90111a0e73445df",
+            "0x6511fe1039a1a978",
+            "0xccde0450c530da90",
+            "0x07e1835d26930f6f",
+            "0xe39cea2780a0f4b2",
+            "0x96f6428f1b45087b",
+            "0x102fb10f330b5d9d",
+            "0x1263dbcbf7965996",
+            "0x971f9e5794e480a0",
+            "0xaf1b5e974e059756",
+            "0x584ba56e7b6084b8",
+            "0xff697d133908a8c5",
+            "0x4279fd0351c5e8dd",
+            "0x808080a05ae352f1",
+            "0x0cad28d279980443",
+            "0x94cd44b12557251d",
+            "0x36699d95c4ceffb1",
+            "0xe61d3dbc80a074b5",
+            "0x60eca8469766ee87",
+            "0x8bc0d1383f02eb22",
+            "0xd4b24b5595bac6c9",
+            "0xb18a6b5a20c5a0e0",
+            "0x8005e64a77ff8d65",
+            "0xeb03932237d26083",
+            "0xddd115bf30d6483e",
+            "0x4cf2e90c45b7fea0",
+            "0xe55d39db9ed335ef",
+            "0xac4a6329f543668a",
+            "0x9525192b99329ae5",
+            "0xe3ea07e9fae0d009",
+            "0x8080a04cf87498d0",
+            "0xc50d19de02329d8a",
+            "0xa8dd32f7e1b0fca6",
+            "0x381d5cc83f8d6820",
+            "0x69491080",
+            "0xeaa032575a0e9e59",
+            "0x3c00f959f8c92f12",
+            "0xdb2869c3395a3b05",
+            "0x02d05e2516446f71",
+            "0xf85b8887470de4df",
+            "0x820000"
+        ]
+    },
+    "callDataBridgedProof": {
+        "slot": [
+            "0x00",
+            "0x00",
+            "0x00",
+            "0x04"
+        ],
+        "proof_sizes_bytes": [
+            "0x114",
+            "0x2b"
+        ],
+        "proof_sizes_words": [
+            "0x23",
+            "0x6"
+        ],
+        "proofs_concat": [
+            "0xf90111a0e73445df",
+            "0x6511fe1039a1a978",
+            "0xccde0450c530da90",
+            "0x07e1835d26930f6f",
+            "0xe39cea2780a0f4b2",
+            "0x96f6428f1b45087b",
+            "0x102fb10f330b5d9d",
+            "0x1263dbcbf7965996",
+            "0x971f9e5794e480a0",
+            "0xaf1b5e974e059756",
+            "0x584ba56e7b6084b8",
+            "0xff697d133908a8c5",
+            "0x4279fd0351c5e8dd",
+            "0x808080a05ae352f1",
+            "0x0cad28d279980443",
+            "0x94cd44b12557251d",
+            "0x36699d95c4ceffb1",
+            "0xe61d3dbc80a074b5",
+            "0x60eca8469766ee87",
+            "0x8bc0d1383f02eb22",
+            "0xd4b24b5595bac6c9",
+            "0xb18a6b5a20c5a0e0",
+            "0x8005e64a77ff8d65",
+            "0xeb03932237d26083",
+            "0xddd115bf30d6483e",
+            "0x4cf2e90c45b7fea0",
+            "0xe55d39db9ed335ef",
+            "0xac4a6329f543668a",
+            "0x9525192b99329ae5",
+            "0xe3ea07e9fae0d009",
+            "0x8080a04cf87498d0",
+            "0xc50d19de02329d8a",
+            "0xa8dd32f7e1b0fca6",
+            "0x381d5cc83f8d6820",
+            "0x69491080",
+            "0xeaa03a35acfbc15f",
+            "0xf81a39ae7d344fd7",
+            "0x09f28e8600b4aa8c",
+            "0x65c6b64bfe7fe36b",
+            "0xd19b88872386f26f",
+            "0xc10000"
+        ]
+    },
+    "pooling_proof": {
+        "originChain": "GOERLI",
+        "destinationChain": "STARKNET_GOERLI",
+        "blockNumber": 9227156,
+        "type": "ACCOUNT_ACCESS",
+        "requestedProperties": {
+            "ACCOUNT_ACCESS": {
+                "account": "0x4559035A77Cfbbcc1af18c47118e90A89D7C1673",
+                "properties": [
+                    "storageHash"
+                ]
+            }
+        },
+        "scheduledAt": 1687528371,
+        "taskId": "01H3M8EX0ZG3J07QBF9TH71TYA",
+        "taskStatus": "SCHEDULED",
+        "currentGroupId": null,
+        "processingStepsTracker": {
+            "type": "ACCOUNT_ACCESS",
+            "actionsRequired": [
+                "SYNC_HEADER",
+                "PROVE_HEADER_PROPS",
+                "PROVE_ACCOUNT_PROPS"
+            ],
+            "currentActionIndex": 0
+        }
+    }
+}

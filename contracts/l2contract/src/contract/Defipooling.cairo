@@ -38,6 +38,19 @@ trait IStarkGate{
 }
 
 
+#[abi]
+trait IERC20Cairo1 {
+    fn name() -> felt252;
+    fn symbol() -> felt252;
+    fn decimals() -> u8;
+    fn totalSupply() -> u256;
+    fn balanceOf(account: ContractAddress) -> u256;
+    fn allowance(owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(recipient: ContractAddress, amount: u256) -> bool;
+    fn transferFrom(sender: ContractAddress, recipient: ContractAddress, amount: u256) -> bool;
+    fn approve(spender: ContractAddress, amount: u256) -> bool;
+}
+
 
 #[abi]
 trait IERC4626<impl ERC20Impl: IERC20> {
@@ -84,8 +97,9 @@ mod Defipooling {
     use super::StorageSlot;
     use openzeppelin::token::erc20::ERC20;
     use openzeppelin::token::erc20::ERC20::ERC20 as ERC20Impl;
-    use openzeppelin::token::erc20::IERC20Dispatcher;
-    use openzeppelin::token::erc20::IERC20DispatcherTrait;
+    use super::IERC20Cairo1Dispatcher;
+    use super::IERC20Cairo1DispatcherTrait;
+
     use hack_template::interfaces::{
         pragma::{
             PragmaOracleDispatcher, PragmaOracleDispatcherTrait, SummaryStatsDispatcher,
@@ -236,7 +250,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     const YEAR_TIMESTAMP : u64 = 31536000;
 
     struct Storage {
-        _asset: IERC20Dispatcher,
+        _asset: IERC20Cairo1Dispatcher,
         _bridge: IStarkGateDispatcher,
         _fact_registery: IFactRegisteryDispatcher, 
         _pragma: PragmaOracleDispatcher,
@@ -392,7 +406,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
             let caller = get_caller_address();
             let token = _asset::read();
             let self = get_contract_address();
-            token.transfer_from(caller, get_contract_address(), assets);
+            token.transferFrom(caller, get_contract_address(), assets);
             ERC20::_mint(receiver, shares);
             Deposit(caller, receiver, assets, shares);
             shares
@@ -414,7 +428,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
             let caller = get_caller_address();
             let token = _asset::read();
             let self = get_contract_address();
-            token.transfer_from(caller, self, assets);
+            token.transferFrom(caller, self, assets);
             // Note: in this case, mint is not part of IERC20, and we should theoritically use a ERC20Mintable
             // library contract. But we can also just call the internal mint function directly.
             ERC20::_mint(receiver, shares);
@@ -488,6 +502,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
 
     #[constructor]
     fn constructor(
+        owner: ContractAddress,
         name: felt252, 
         symbol: felt252, 
         asset: ContractAddress, 
@@ -503,8 +518,8 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         data_provider_fee_share: u256,
         l2_bridger_fee_share: u256,
         l1_bridger_fee_share: u256) {
-        initializer(name, symbol, asset, bridge, fact_registery, pragma, yearn_vault, yearn_token_balance_slot, pooling_bridged_underlying_slot, pooling_received_underlying_slot, ideal_l2_underlying_ratio, rebalancing_threshold);
-        update_fee_share(data_provider_fee_share, l2_bridger_fee_share, l1_bridger_fee_share);
+        initializer(owner, name, symbol, asset, bridge, fact_registery, pragma, yearn_vault, yearn_token_balance_slot, pooling_bridged_underlying_slot, pooling_received_underlying_slot, ideal_l2_underlying_ratio, rebalancing_threshold, data_provider_fee_share, l2_bridger_fee_share, l1_bridger_fee_share);
+        
     }
 
     ////////////////////////////////
@@ -646,85 +661,200 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     // Governance
     ////////////////////////////////////////////////////////////////
 
-    #[external]
-    fn update_l1_pooling(l1_pooling_address: felt252) {
-        Ownable::assert_only_owner();
-        _l1_pooling::write(l1_pooling_address);
-    }
-
-    #[external]
-    fn update_bridge(bridge: ContractAddress) {
-        Ownable::assert_only_owner();
-        _bridge::write(IStarkGateDispatcher { contract_address: bridge });
-    }
-
-    #[external]
-    fn update_fact_registery(fact_registery: ContractAddress) {
-        Ownable::assert_only_owner();
-        _fact_registery::write(IFactRegisteryDispatcher { contract_address: fact_registery });
-    }
-
-    #[external]
-    fn update_pragma(pragma: ContractAddress) {
-        Ownable::assert_only_owner();
-        _pragma::write(PragmaOracleDispatcher { contract_address: pragma });
-    }
+   #[external]
+fn update_l1_pooling(l1_pooling_address: felt252) {
+    Ownable::assert_only_owner();
+    _update_l1_pooling(l1_pooling_address);
+}
 
 
-    #[external]
-    fn update_yearn_vault(yearn_vault: felt252) {
-        Ownable::assert_only_owner();
-        _yearn_vault::write(yearn_vault);
-    }
-
-    #[external]
-    fn update_yearn_token_balance_slot(yearn_token_balance_slot: StorageSlot) {
-        Ownable::assert_only_owner();
-        _yearn_token_balance_slot::write(yearn_token_balance_slot);
-    }
-
-    #[external]
-    fn update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot: StorageSlot) {
-        Ownable::assert_only_owner();
-        _pooling_bridged_underlying_slot::write(pooling_bridged_underlying_slot);
-    }
+#[external]
+fn update_bridge(bridge: ContractAddress) {
+    Ownable::assert_only_owner();
+    _update_bridge(bridge);
+}
 
 
-    #[external]
-    fn update_pooling_received_underlying_slot(pooling_received_underlying_slot: StorageSlot) {
-        Ownable::assert_only_owner();
-        _pooling_received_underlying_slot::write(pooling_received_underlying_slot);
-    }
+#[external]
+fn update_fact_registery(fact_registery: ContractAddress) {
+    Ownable::assert_only_owner();
+    _update_fact_registery(fact_registery);
+}
 
 
-    #[external]
-    fn update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio: u256) {
-        Ownable::assert_only_owner();
-        _ideal_l2_underlying_ratio::write(ideal_l2_underlying_ratio);
-    }
+#[external]
+fn update_pragma(pragma: ContractAddress) {
+    Ownable::assert_only_owner();
+    _update_pragma(pragma);
+}
 
 
-    #[external]
-    fn update_rebalancing_threshold(rebalancing_threshold: u256) {
-        Ownable::assert_only_owner();
-        _rebalancing_threshold::write(rebalancing_threshold);
-    }
-
-    #[external]
-    fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share : u256, l2_bridger_fee_share: u256) {
-        Ownable::assert_only_owner();
-        assert(data_provider_fee_share + l1_bridger_fee_share + l2_bridger_fee_share == WAD, 'WRONG_FEE_SHARE_ALLOC');
-        _data_provider_fee_share::write(data_provider_fee_share);
-        _l1_bridger_fee_share::write(l1_bridger_fee_share);
-        _l2_bridger_fee_share::write(l2_bridger_fee_share);
-    }
 
 
+#[external]
+fn update_yearn_vault(yearn_vault: felt252) {
+    Ownable::assert_only_owner();
+    _update_yearn_vault(yearn_vault);
+}
+
+
+#[external]
+fn update_yearn_token_balance_slot(yearn_token_balance_slot: StorageSlot) {
+    Ownable::assert_only_owner();
+    _update_yearn_token_balance_slot(yearn_token_balance_slot);
+}
+
+#[external]
+fn update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot: StorageSlot) {
+    Ownable::assert_only_owner();
+    _update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot);
+}
+
+
+
+#[external]
+fn update_pooling_received_underlying_slot(pooling_received_underlying_slot: StorageSlot) {
+    Ownable::assert_only_owner();
+    _update_pooling_received_underlying_slot(pooling_received_underlying_slot);
+}
+
+
+
+#[external]
+fn update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio: u256) {
+    Ownable::assert_only_owner();
+    _update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio);
+}
+
+
+
+#[external]
+fn update_rebalancing_threshold(rebalancing_threshold: u256) {
+    Ownable::assert_only_owner();
+    _update_rebalancing_threshold(rebalancing_threshold);
+}
+
+
+#[external]
+fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l2_bridger_fee_share: u256) {
+    Ownable::assert_only_owner();
+    _update_fee_share(data_provider_fee_share, l1_bridger_fee_share, l2_bridger_fee_share);
+}
 
 
     ////////////////////////////////////////////////////////////////
-    // Participants
+    // pooling parameters
     ////////////////////////////////////////////////////////////////
+
+    #[view]
+    fn owner() -> ContractAddress {
+        Ownable::owner()
+    }
+
+    #[view]
+    fn bridge() -> ContractAddress {
+        _bridge::read().contract_address
+    }
+
+    #[view]
+    fn fact_registery() -> ContractAddress {
+        _fact_registery::read().contract_address
+    }
+
+    #[view]
+    fn pragma() -> ContractAddress {
+        _pragma::read().contract_address
+    }
+
+    #[view]
+    fn l1_pooling() -> felt252 {
+        _l1_pooling::read()
+    }
+
+    #[view]
+    fn yearn_vault() -> felt252 {
+        _yearn_vault::read()
+    }
+
+    #[view]
+    fn yearn_token_balance_slot() -> StorageSlot {
+        _yearn_token_balance_slot::read()
+    }
+
+    #[view]
+    fn pooling_received_underlying_slot() -> StorageSlot {
+        _pooling_received_underlying_slot::read()
+    }
+
+    #[view]
+    fn pooling_bridged_underlying_slot() -> StorageSlot {
+        _pooling_bridged_underlying_slot::read()
+    }
+
+    #[view]
+    fn ideal_l2_underlying_ratio() -> u256 {
+        _ideal_l2_underlying_ratio::read()
+    }
+
+    #[view]
+    fn rebalancing_threshold() -> u256 {
+        _rebalancing_threshold::read()
+    }
+
+    #[view]
+    fn data_provider_fee_share() -> u256 {
+        _data_provider_fee_share::read()
+    }
+
+    #[view]
+    fn l1_bridger_fee_share() -> u256 {
+        _l1_bridger_fee_share::read()
+    }
+
+    #[view]
+    fn l2_bridger_fee_share() -> u256 {
+        _l2_bridger_fee_share::read()
+    }
+
+    #[view]
+    fn yearn_token_balance() -> u256 {
+        _yearn_token_balance::read()
+    }
+
+    #[view]
+    fn l2_received_underying() -> u256 {
+        _l2_received_underying::read()
+    }
+
+    #[view]
+    fn l2_bridged_underying() -> u256 {
+        _l2_bridged_underying::read()
+    }
+
+    #[view]
+    fn l1_received_underying() -> u256 {
+        _l1_received_underying::read()
+    }
+
+    #[view]
+    fn l1_bridged_underying() -> u256 {
+        _l1_bridged_underying::read()
+    }
+
+    #[view]
+    fn last_data_prover() -> ParticipantInfo {
+        _data_prover::read()
+    }
+
+    #[view]
+    fn last_l1_bridger() -> ParticipantInfo {
+        _l1_bridger::read()
+    }
+
+    #[view]
+    fn last_l2_bridger() -> ParticipantInfo {
+        _l2_bridger::read()
+    }
 
     #[view]
     fn participant_rewards() -> ParticipantRewards {
@@ -736,6 +866,12 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         }
     }
 
+
+
+    ////////////////////////////////////////////////////////////////
+    // Participants
+    ////////////////////////////////////////////////////////////////
+    
     #[external]
     fn handle_bridge_from_l2() {
         assert(limit_up_l2_assets() < l2_reserve(), 'ENOUGH_UNDERLYING_ON_L1');
@@ -761,7 +897,6 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         assert(limit_down_l2_assets() > l2_reserve(), 'ENOUGH_UNDERLYING_ON_L2');
         assert_not_pending_withdrawal();
         let bridge = _bridge::read();
-        let token = _asset::read();
         let underlying_to_bridge = ideal_l2_reserve_underlying() - l2_reserve();
         let mut payload: Array<felt252> = ArrayTrait::new();
         payload.append(1);
@@ -819,6 +954,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
 
 
 
+
     // Starkgate send ETH to an address first, we have to collect funds from receiver, here set to the owner, that can't be this address (accountability)
     #[external]
     fn handle_get_available_bridge_money() {
@@ -828,11 +964,14 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         _pending_withdrawal::write(0.into());
     }
 
+
+
     ///
     /// Internals
     ///
 
     fn initializer(
+        owner: ContractAddress,
         name: felt252, 
         symbol: felt252, 
         asset: ContractAddress, 
@@ -844,20 +983,24 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         pooling_bridged_underlying_slot: StorageSlot, 
         pooling_received_underlying_slot: StorageSlot,
         ideal_l2_underlying_ratio: u256, 
-        rebalancing_threshold: u256) {
+        rebalancing_threshold: u256,
+        data_provider_fee_share: u256,
+        l2_bridger_fee_share: u256,
+        l1_bridger_fee_share: u256) {
 
         ERC20::initializer(name, symbol);
-        Ownable::initializer();
-        _asset::write(IERC20Dispatcher { contract_address: asset });
-        update_bridge(bridge);
-        update_fact_registery(fact_registery);
-        update_pragma(pragma);
-        update_yearn_vault(yearn_vault);
-        update_yearn_token_balance_slot(yearn_token_balance_slot);
-        update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot);
-        update_pooling_received_underlying_slot(pooling_received_underlying_slot);
-        update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio);
-        update_rebalancing_threshold(rebalancing_threshold);
+        Ownable::initializer(owner);
+        _asset::write(IERC20Cairo1Dispatcher { contract_address: asset });
+        _update_bridge(bridge);
+        _update_fact_registery(fact_registery);
+        _update_pragma(pragma);
+        _update_yearn_vault(yearn_vault);
+        _update_yearn_token_balance_slot(yearn_token_balance_slot);
+        _update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot);
+        _update_pooling_received_underlying_slot(pooling_received_underlying_slot);
+        _update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio);
+        _update_rebalancing_threshold(rebalancing_threshold);
+        _update_fee_share(data_provider_fee_share, l2_bridger_fee_share, l1_bridger_fee_share);
     }
 
 
@@ -886,7 +1029,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     }
 
     fn l2_reserve() -> u256{
-        _asset::read().balance_of(get_contract_address()) 
+        _asset::read().balanceOf(get_contract_address()) 
     }
 
     fn l2_to_l1_transit() -> u256 {
@@ -918,6 +1061,67 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         convert_to_shares(WAD)
     }
 
+
+
+fn _update_l1_pooling(l1_pooling_address: felt252) {
+    _l1_pooling::write(l1_pooling_address);
+}
+
+
+fn _update_bridge(bridge: ContractAddress) {
+    _bridge::write(IStarkGateDispatcher { contract_address: bridge });
+}
+
+
+fn _update_fact_registery(fact_registery: ContractAddress) {
+    _fact_registery::write(IFactRegisteryDispatcher { contract_address: fact_registery });
+}
+
+
+fn _update_pragma(pragma: ContractAddress) {
+    _pragma::write(PragmaOracleDispatcher { contract_address: pragma });
+}
+
+fn _update_yearn_vault(yearn_vault: felt252) {
+    _yearn_vault::write(yearn_vault);
+}
+
+
+
+fn _update_yearn_token_balance_slot(yearn_token_balance_slot: StorageSlot) {
+    _yearn_token_balance_slot::write(yearn_token_balance_slot);
+}
+
+
+
+
+fn _update_pooling_bridged_underlying_slot(pooling_bridged_underlying_slot: StorageSlot) {
+    _pooling_bridged_underlying_slot::write(pooling_bridged_underlying_slot);
+}
+
+
+fn _update_pooling_received_underlying_slot(pooling_received_underlying_slot: StorageSlot) {
+    _pooling_received_underlying_slot::write(pooling_received_underlying_slot);
+}
+
+
+fn _update_ideal_l2_underlying_ratio(ideal_l2_underlying_ratio: u256) {
+    _ideal_l2_underlying_ratio::write(ideal_l2_underlying_ratio);
+}
+
+
+fn _update_rebalancing_threshold(rebalancing_threshold: u256) {
+    _rebalancing_threshold::write(rebalancing_threshold);
+}
+
+
+fn _update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l2_bridger_fee_share: u256) {
+    assert(data_provider_fee_share + l1_bridger_fee_share + l2_bridger_fee_share == WAD, 'WRONG_FEE_SHARE_ALLOC');
+    _data_provider_fee_share::write(data_provider_fee_share);
+    _l1_bridger_fee_share::write(l1_bridger_fee_share);
+    _l2_bridger_fee_share::write(l2_bridger_fee_share);
+}
+
     fn performance_since_participation(participant: ParticipantInfo) -> u256 {
         if(share_price_underlying() <= participant.share_price){
             0.into()
@@ -936,10 +1140,15 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         if(performance_fees==0){
             0
         } else{
-            mul_div_down(performance_fees, u256 {low: timestamp_since_participation(participant).into(), high: 0}, u256 {low: YEAR_TIMESTAMP.into(), high: 0})
+            let ulow : felt252 = timestamp_since_participation(participant).into();
+            let uhigh : felt252 = YEAR_TIMESTAMP.into();
+            let ulow2 : u128 = ulow.try_into().expect('not');
+            let uhigh2 : u128 = ulow.try_into().expect('not');
+            mul_div_down(performance_fees, u256 {low: ulow2, high: 0}, u256 {low: uhigh2, high: 0})
         }
         
     }
+
 
   fn init_stream(participant_type: felt252, caller:ContractAddress) {
         let current_rewards = participant_rewards();

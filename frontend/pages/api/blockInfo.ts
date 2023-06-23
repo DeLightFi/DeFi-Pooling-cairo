@@ -1,10 +1,9 @@
 import { BigNumber, ethers } from 'ethers'
 import { Data } from "../../utils/data"
 
-const quicknode_endpoint = process.env.QUICKNODE_API as string
 
 export const getTxsInBlockInterval = async (fromBlock: number, toBlock: number, contractAddress: string, walletAddress: string) => {
-    const req = await fetch(quicknode_endpoint, {
+    const req = await fetch("https://thrumming-wiser-wind.ethereum-goerli.discover.quiknode.pro/c04504dec720c90cd6d6f952254cccbe44923a62/", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -33,7 +32,7 @@ export const getTxsInBlockInterval = async (fromBlock: number, toBlock: number, 
 
 // Getting the block number by transaction hash
 export const getTxBlockNum = async (txHash: string) => {
-    const req = await fetch(quicknode_endpoint, {
+    const req = await fetch("https://thrumming-wiser-wind.ethereum-goerli.discover.quiknode.pro/c04504dec720c90cd6d6f952254cccbe44923a62/", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -55,7 +54,7 @@ export const getTxBlockNum = async (txHash: string) => {
 
 // Getting the current block number to compare with the blocknumber that a ERC20 contract has deployed
 export const getCurrentBlockNum = async () => {
-    const req = await fetch(quicknode_endpoint, {
+    const req = await fetch("https://thrumming-wiser-wind.ethereum-goerli.discover.quiknode.pro/c04504dec720c90cd6d6f952254cccbe44923a62/", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -74,7 +73,7 @@ export const getCurrentBlockNum = async () => {
 }
 
 export const ethGetProof = async (address: string, slots: string[], blockNumber: number) => {
-    const req = await fetch(quicknode_endpoint, {
+    const req = await fetch("https://thrumming-wiser-wind.ethereum-goerli.discover.quiknode.pro/c04504dec720c90cd6d6f952254cccbe44923a62/", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -96,7 +95,7 @@ export const ethGetProof = async (address: string, slots: string[], blockNumber:
 }
 
 export const ethGetStorageAt = async (address: string, slot: string, blockNumber: number) => {
-    const req = await fetch(quicknode_endpoint, {
+    const req = await fetch("https://thrumming-wiser-wind.ethereum-goerli.discover.quiknode.pro/c04504dec720c90cd6d6f952254cccbe44923a62/", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
