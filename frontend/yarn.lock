@@ -15,6 +15,32 @@
     "@jridgewell/gen-mapping" "^0.3.0"
     "@jridgewell/trace-mapping" "^0.3.9"
 
+"@argent/get-starknet@^6.4.3":
+  version "6.4.3"
+  resolved "https://registry.yarnpkg.com/@argent/get-starknet/-/get-starknet-6.4.3.tgz#6e595b97b73dad4316a8694c914d05e6145fa9ea"
+  integrity sha512-k7vX6KksDXuubui/zG++GnfNL/H9bvT9ujEDoycp6RRxHkK/cwK6E+ntVs+OlUd0Mb6mh9dcXqFi5OkfZA55IA==
+  dependencies:
+    "@argent/web-sdk" "^6.4.0"
+    "@argent/x-window" "^6.4.0"
+    bowser "^2.11.0"
+    get-starknet-core "^2.0.0"
+    lodash-es "^4.17.21"
+    svelte-forms "^2.3.1"
+
+"@argent/web-sdk@^6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@argent/web-sdk/-/web-sdk-6.4.0.tgz#112c29e9a57e9798589cd7259ebdccfd668cadb5"
+  integrity sha512-Q52vPkpp39MVXC8FkH5RiNRBQbHiRgSPvtPlR45pSCpLfVm9dCHWDUzzunPXB6GXvgEt/m+cmpchz6rXIb3UZg==
+  dependencies:
+    "@argent/x-window" "^6.4.0"
+    get-starknet-core "^2.0.0"
+    lodash-es "^4.17.21"
+
+"@argent/x-window@^6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@argent/x-window/-/x-window-6.4.0.tgz#60f5fd56567c84588b3c90ab8f66f5f83f4689a9"
+  integrity sha512-fGFUWCrtnH8OJl+OnvUh/EdCdru8cfnftOls6XgzqwZLqhNC7PMQnKEP3WR+xL+C6pzja1K2hlK84qSap+WMYA==
+
 "@babel/cli@^7.21.0":
   version "7.22.5"
   resolved "https://registry.npmjs.org/@babel/cli/-/cli-7.22.5.tgz"
@@ -3494,6 +3520,11 @@ borsh@^0.7.0:
     bs58 "^4.0.0"
     text-encoding-utf-8 "^1.0.2"
 
+bowser@^2.11.0:
+  version "2.11.0"
+  resolved "https://registry.yarnpkg.com/bowser/-/bowser-2.11.0.tgz#5ca3c35757a7aa5771500c70a73a9f91ef420a8f"
+  integrity sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==
+
 bplist-parser@^0.2.0:
   version "0.2.0"
   resolved "https://registry.npmjs.org/bplist-parser/-/bplist-parser-0.2.0.tgz"
@@ -5436,6 +5467,11 @@ is-plain-obj@^2.1.0:
   resolved "https://registry.npmjs.org/is-plain-obj/-/is-plain-obj-2.1.0.tgz"
   integrity sha512-YWnfyRwxL/+SsrWYfOpUtz5b3YD+nyfkHvjbcanzk8zgyO4ASD67uVMRt8k5bM4lLMDnXfriRhOpemw+NfT1eA==
 
+is-promise@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/is-promise/-/is-promise-4.0.0.tgz#42ff9f84206c1991d26debf520dd5c01042dd2f3"
+  integrity sha512-hvpoI6korhJMnej285dSg6nu1+e6uxs7zG3BYAm5byqDsgJNWwxzM6z6iZiAgQR4TJ30JmBTOwqZUw3WlyH3AQ==
+
 is-regex@^1.1.4:
   version "1.1.4"
   resolved "https://registry.npmjs.org/is-regex/-/is-regex-1.1.4.tgz"
@@ -5775,6 +5811,11 @@ locate-path@^6.0.0:
   integrity sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==
   dependencies:
     p-locate "^5.0.0"
+
+lodash-es@^4.17.21:
+  version "4.17.21"
+  resolved "https://registry.yarnpkg.com/lodash-es/-/lodash-es-4.17.21.tgz#43e626c46e6591b7750beb2b50117390c609e3ee"
+  integrity sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==
 
 lodash.debounce@^4.0.8:
   version "4.0.8"
@@ -7213,6 +7254,13 @@ supports-preserve-symlinks-flag@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
+
+svelte-forms@^2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/svelte-forms/-/svelte-forms-2.3.1.tgz#be1ddd096700a7dca6e457983086801d23a918f9"
+  integrity sha512-ExX9PM0JgvdOWlHl2ztD7XzLNPOPt9U5hBKV8sUAisMfcYWpPRnyz+6EFmh35BOBGJJmuhTDBGm5/7seLjOTIA==
+  dependencies:
+    is-promise "^4.0.0"
 
 synckit@^0.8.5:
   version "0.8.5"

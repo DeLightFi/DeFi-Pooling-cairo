@@ -6,6 +6,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@argent/get-starknet": "^6.4.3",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@rainbow-me/rainbowkit": "^0.12.9",
