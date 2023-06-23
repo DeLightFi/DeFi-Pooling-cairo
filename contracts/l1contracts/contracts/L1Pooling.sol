@@ -74,6 +74,7 @@ contract Ownable {
 
 contract L1Pooling is Ownable {
     uint256 public l2Address;
+    uint256 public l2AddressOwner;
     IBridge public starkgateBridge;
     uint256 public receivedEthBalance;
     uint256 public bridgedOutEthBalance;
@@ -90,7 +91,8 @@ contract L1Pooling is Ownable {
         address _starkgateBridge,
         address _wrappedEth,
         address _vault,
-        address _starkgateCore
+        address _starkgateCore,
+        uint256 _l2AddressOwner
     ) {
         l2Address = _l2Address;
         starkgateBridge = IBridge(_starkgateBridge);
@@ -98,6 +100,7 @@ contract L1Pooling is Ownable {
         vault = IVault(_vault);
         admin = msg.sender;
         starknetCore = IStarknetCore(_starkgateCore);
+        l2AddressOwner = _l2AddressOwner;
     }
 
     receive() external payable {}
@@ -155,7 +158,10 @@ contract L1Pooling is Ownable {
         );
         weth.withdraw(value);
         bridgedOutEthBalance += value;
-        starkgateBridge.deposit{value: value + msg.value}(value, l2Address);
+        starkgateBridge.deposit{value: value + msg.value}(
+            value,
+            l2AddressOwner
+        );
         emit WithdrawYieldDepositBridge(amount);
     }
 
