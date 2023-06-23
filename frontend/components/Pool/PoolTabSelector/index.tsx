@@ -4,14 +4,14 @@ import { FaChartPie, FaLock } from "react-icons/fa";
 import { Container } from "./PoolTabSelectorElements";
 
 
-const PoolTabSelector = ({ }) => {
+const PoolTabSelector = ({ setMode }) => {
 
   return (
     <Container>
-      <div>
+      <div onClick={() => setMode("stats")}>
         <FaChartPie />
       </div>
-      <div>
+      <div onClick={() => setMode("proof")}>
         <FaLock />
       </div>
     </Container>

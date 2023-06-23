@@ -2,16 +2,22 @@ import { useEffect, useState } from "react";
 
 import { Container } from "./PoolElements";
 import PoolTabSelector from "./PoolTabSelector";
-import PoolTab from "./PoolTab";
+import PoolTabStats from "./PoolTabStats";
+import PoolTabProof from "./PoolTabProof";
 import PoolTrade from "./PoolTrade";
 
 
 const Pool = ({ }) => {
+  const [mode, setMode] = useState("stats");
 
   return (
     <Container>
-      <PoolTabSelector />
-      <PoolTab />
+      <PoolTabSelector setMode={setMode} />
+      {mode === "stats" ?
+        <PoolTabStats />
+        :
+        <PoolTabProof />
+      }
       <PoolTrade />
     </Container>
   );
