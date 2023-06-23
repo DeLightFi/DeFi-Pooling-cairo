@@ -8,4 +8,4 @@ hack_template = {git = "https://github.com/Astraly-Labs/pragma-hack", branch = "
 ownable = { path = "ownable" }
 
 [[target.starknet-contract]]
-allowed-libfuncs-list.name = "experimental"
+allowed-libfuncs-list.name = "all"

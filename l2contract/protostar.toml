@@ -7,4 +7,4 @@ Ownable = ["ownable/src"]
 Defipooling = ["src"]
 
 [[target.starknet-contract]]
-allowed-libfuncs-list.name = "experimental_v0.1.0"
+allowed-libfuncs-list.name = "all"
