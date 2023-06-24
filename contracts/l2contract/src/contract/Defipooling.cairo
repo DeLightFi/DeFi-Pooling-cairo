@@ -1061,7 +1061,8 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
 
     #[view]
     fn l1_reserve() -> u256 {
-        _l2_bridged_underying::read()
+        // assuming 1 yield = 1 eth because we don't have pragma
+        _yearn_token_balance::read()
     }
 
     #[view]

@@ -1,4 +1,8 @@
+import { Call, number, Provider } from "starknet"
 
+
+export const ETH = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
+export const BOOSTED_ETH = "0x074cdd6e9db755ac36d136bb8b4087d94eae0cf8df2d61bf8a77d8abc6e67996"
 export function formatNumber(num: number) {
     if (Math.abs(num) >= 1.0e9) {
         // Billions
@@ -43,4 +47,56 @@ export async function getCgTokenPrice(): Promise<number> {
     )
     const data = await response.json()
     return parseFloat(data[key].usd)
+}
+
+export const provider_testnet = new Provider({
+    sequencer: { network: 'goerli-alpha' }
+})
+
+export async function fetchEthBalance(account_address: string): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: ETH,
+        entrypoint: 'balanceOf',
+        calldata: [account_address]
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        const output = parseFloat(number.toFelt(data.result[0]))
+        return output
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+export async function fetchEthBoostedBalance(account_address: string): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'balance_of',
+        calldata: [account_address]
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        const output = parseFloat(number.toFelt(data.result[0]))
+        return output
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+export async function fetchShareRatio(): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'convert_to_shares',
+        calldata: ["1000000000000000000", "0"]
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        const output = parseFloat(number.toFelt(data.result[0])) / 1000000000000000000
+        return output
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaLock } from "react-icons/fa";
 import styled from "styled-components";
-import { formatNumber, getCgTokenPrice } from "../../../utils";
+import { BOOSTED_ETH, ETH, fetchEthBalance, fetchEthBoostedBalance, fetchShareRatio, formatNumber, getCgTokenPrice } from "../../../utils";
 import LogoNameEth from "./LogoNameEth";
 import { BiArrowFromTop } from 'react-icons/bi'
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
@@ -9,6 +9,7 @@ import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import { Container } from "./PoolTradeElements";
 import { connect, ConnectedStarknetWindowObject } from '@argent/get-starknet'
 import LogoNameEthBoost from "./LogoNameEthBoost";
+import { Call } from "starknet";
 
 const UnderlyingList = styled.div`
   display: flex;
@@ -103,7 +104,12 @@ const MaxButton = styled.button`
 `
 
 
-const PoolTrade = ({ connection, setConnection }) => {
+interface PoolTradeProps {
+  connection: ConnectedStarknetWindowObject;
+  setConnection: (connection: ConnectedStarknetWindowObject) => void;
+}
+
+const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
   const [mode, setMode] = useState("deposit");
   const [depositInputValue, setDepositInputValue] = useState<string>("0")
   const [depositOutputValue, setDepositOutputValue] = useState<string>("0")
@@ -111,6 +117,8 @@ const PoolTrade = ({ connection, setConnection }) => {
   const [userEthBalance, setUserEthBalance] = useState<number>(0)
   const [userYieldBalance, setUserYieldBalance] = useState<number>(0)
   const [ethPrice, setEthPrice] = useState<number>(0)
+  const [errorMessage, setErrorMessage] = useState<string>("")
+  const [tTryDeposit, setTryDeposit] = useState<boolean>(false)
 
 
 
@@ -129,15 +137,24 @@ const PoolTrade = ({ connection, setConnection }) => {
   useEffect(() => {
     const fetchData = async () => {
       const eth_price_ = await getCgTokenPrice();
+      const ratio = await fetchShareRatio();
       setEthPrice(eth_price_)
+      setEthToSharesRatio(ratio)
     };
 
     fetchData();
   }, []);
 
   useEffect(() => {
+    const fetchBalances = async () => {
+      const eth_balance = await fetchEthBalance(connection.account.address);
+      const boosted_eth_balance = await fetchEthBoostedBalance(connection.account.address);
+      setUserEthBalance(eth_balance)
+      setUserYieldBalance(boosted_eth_balance)
+    };
+
     if (connection) {
-      console.log(connection.account.address)
+      fetchBalances()
     }
   }, [connection])
 
@@ -164,8 +181,53 @@ const PoolTrade = ({ connection, setConnection }) => {
 
 
   const handleMaxUnderlyings = () => {
-    setDepositInputValue("0")
+    setDepositInputValue((userEthBalance / 1000000000000000000).toString())
+    setDepositOutputValue((userEthBalance * ethToSharesRatio / 1000000000000000000).toString())
   }
+
+
+  async function handleDeposit() {
+
+    setTryDeposit(true)
+
+    if (parseFloat(depositInputValue) == 0) {
+      setErrorMessage("Invalid Amount")
+      return
+    }
+
+    if (!connection) {
+      setErrorMessage("Connect Wallet Fist")
+      return
+    }
+
+    console.log("started")
+
+    const call_approve: Call = {
+      contractAddress: ETH,
+      entrypoint: "approve",
+      calldata: [BOOSTED_ETH, (parseFloat(depositInputValue) * 1000000000000000000), 0]
+    }
+
+    const call_deposit: Call = {
+      contractAddress: BOOSTED_ETH,
+      entrypoint: "deposit",
+      calldata: [(parseFloat(depositInputValue) * 1000000000000000000), 0, connection.account.address]
+    }
+
+    await connection.account.execute(
+      [call_approve, call_deposit]
+    ).then(
+      () => {
+        setTryDeposit(false)
+      }
+    )
+      .catch((error) => {
+        console.log(error)
+        setErrorMessage("error performing call")
+        setTryDeposit(false)
+      })
+  }
+
 
 
 
@@ -223,7 +285,7 @@ const PoolTrade = ({ connection, setConnection }) => {
                       <>
                         Balance:{' '}
                         {formatNumber(
-                          0
+                          userEthBalance / 1000000000000000000
                         )}
                       </>
                     </LightText>
@@ -236,9 +298,8 @@ const PoolTrade = ({ connection, setConnection }) => {
 
                   <LightText>
                     <>
-                      {depositInputValue
-                        ? depositInputValue
-                        : '0'}{' '}
+                      {formatNumber(parseFloat(depositInputValue) * ethPrice)
+                      }{' '}
                       $
                     </>
                   </LightText>
@@ -249,30 +310,27 @@ const PoolTrade = ({ connection, setConnection }) => {
                 <UnderlyingRow>
                   <LogoNameEthBoost />
                   <StyledOutput>
-                    {parseFloat(depositOutputValue) == 0
-                      ? formatNumber(parseFloat(depositOutputValue))
-                      : '0'}
+                    {formatNumber(parseFloat(depositOutputValue))}
                   </StyledOutput>
                 </UnderlyingRow>
                 <UnderlyingRow>
                   <BalanceAndButton>
                     <LightText>
-                      <>Balance: {formatNumber(userYieldBalance)}</>
+                      <>Balance: {formatNumber(userYieldBalance / 1000000000000000000)}</>
                     </LightText>
                   </BalanceAndButton>
                   <LightText>
                     <>
-                      {depositOutputValue
-                        ? depositOutputValue
-                        : '0'}{' '}
+                      {formatNumber(ethPrice * parseFloat(depositOutputValue))}{' '}
                       $
                     </>
                   </LightText>
                 </UnderlyingRow>
               </UnderlyingBox>
             </UnderlyingList>
-            <div className="submit">
-              <button>Submit</button>
+            <div className="submit" onClick={handleDeposit}>
+              <button>{mode == "deposit" ?
+                "Deposit" : "Redeem"}</button>
             </div>
           </>
           :
@@ -325,9 +383,7 @@ const PoolTrade = ({ connection, setConnection }) => {
                 <UnderlyingRow>
                   <LogoNameEth />
                   <StyledOutput>
-                    {parseFloat(depositOutputValue) == 0
-                      ? formatNumber(parseFloat(depositOutputValue))
-                      : '0'}
+                    {parseFloat(depositOutputValue)}
                   </StyledOutput>
                 </UnderlyingRow>
                 <UnderlyingRow>
