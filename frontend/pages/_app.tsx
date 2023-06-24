@@ -3,7 +3,10 @@ import { ThemeProvider, DefaultTheme } from 'styled-components'
 import { useState } from 'react'
 import Head from 'next/head'
 import { StarknetConfig, InjectedConnector } from '@starknet-react/core'
+
 import GlobalStyle from '../components/globalstyles'
+import Layout from "../components/Layout";
+
 
 const darktheme: DefaultTheme = {
   colors: {
@@ -26,17 +29,22 @@ export default function App({ Component, pageProps }: AppProps) {
     new InjectedConnector({ options: { id: 'argentX' } }),
   ]
 
+  const [connection, setConnection] = useState(null);
+  const [provider, setProvider] = useState(null);
+  const [address, setAddress] = useState(null);
+
 
   return (
     <>
       <StarknetConfig connectors={connectors}>
-
         <Head>
           <title>Mirror - Bringing L1 DeFi to Starknet</title >
         </Head >
         <ThemeProvider theme={theme}>
           <GlobalStyle />
-          <Component {...pageProps} theme={theme} SetTheme={SetTheme} />
+          <Layout connection={connection} setConnection={setConnection} setProvider={setProvider} setAddress={setAddress}>
+            <Component {...pageProps} theme={theme} SetTheme={SetTheme} connection={connection} provider={provider} address={address} />
+          </Layout>
         </ThemeProvider>
       </StarknetConfig>
     </>
