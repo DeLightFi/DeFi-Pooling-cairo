@@ -1,4 +1,4 @@
-import { FaChartPie, FaLock, FaInfo } from "react-icons/fa";
+import { FaChartPie, FaLayerGroup, FaInfo } from "react-icons/fa";
 
 import { Container } from "./PoolTabSelectorElements";
 
@@ -11,7 +11,7 @@ const PoolTabSelector = ({ setMode }) => {
         <FaChartPie />
       </div>
       <div onClick={() => setMode("proof")}>
-        <FaLock />
+        <FaLayerGroup />
       </div>
       <div onClick={() => setMode("about")}>
         <FaInfo />
