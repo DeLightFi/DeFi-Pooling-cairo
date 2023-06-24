@@ -5,23 +5,19 @@ import { Container } from "./NavbarElements";
 
 
 
-const Navbar = ({ connection, setConnection, setProvider, setAddress }) => {
+const Navbar = ({ connection, setConnection }) => {
     const connectToStarknet = async () => {
         const connection = await connect({
             modalWalletAppearance: "all"
         });
         if (connection && connection.isConnected) {
             setConnection(connection);
-            setProvider(connection.account);
-            setAddress(connection.selectedAddress);
         }
     };
 
     const disconnectWallet = async () => {
         await disconnect();
         setConnection(undefined);
-        setProvider(undefined);
-        setAddress('');
     }
 
     return (

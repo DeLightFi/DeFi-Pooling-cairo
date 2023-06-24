@@ -6,6 +6,8 @@ import { StarknetConfig, InjectedConnector } from '@starknet-react/core'
 
 import GlobalStyle from '../components/globalstyles'
 import Layout from "../components/Layout";
+import { ConnectedStarknetWindowObject } from '@argent/get-starknet'
+import { AccountInterface } from 'starknet'
 
 
 const darktheme: DefaultTheme = {
@@ -29,9 +31,7 @@ export default function App({ Component, pageProps }: AppProps) {
     new InjectedConnector({ options: { id: 'argentX' } }),
   ]
 
-  const [connection, setConnection] = useState(null);
-  const [provider, setProvider] = useState(null);
-  const [address, setAddress] = useState(null);
+  const [connection, setConnection] = useState<ConnectedStarknetWindowObject>(null);
 
 
   return (
@@ -42,8 +42,8 @@ export default function App({ Component, pageProps }: AppProps) {
         </Head >
         <ThemeProvider theme={theme}>
           <GlobalStyle />
-          <Layout connection={connection} setConnection={setConnection} setProvider={setProvider} setAddress={setAddress}>
-            <Component {...pageProps} theme={theme} SetTheme={SetTheme} connection={connection} provider={provider} address={address} />
+          <Layout connection={connection} setConnection={setConnection}>
+            <Component {...pageProps} theme={theme} SetTheme={SetTheme} connection={connection} setConnection={setConnection} />
           </Layout>
         </ThemeProvider>
       </StarknetConfig>

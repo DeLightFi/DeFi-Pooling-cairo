@@ -9,10 +9,6 @@ async function main() {
     const bridgedOutEthBalance = await l1Pooling.bridgedOutEthBalance()
     console.log(receivedEthBalance)
     console.log(bridgedOutEthBalance)
-
-    // uint256 public receivedEthBalance;
-    // uint256 public bridgedOutEthBalance;
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -11,7 +11,7 @@ import {
 import { Container } from "./PoolTabStatsElements";
 
 
-const PoolTabStats = ({ }) => {
+const PoolTabStats = ({ connection, setConnection }) => {
   const [data, setData] = useState([]);
   useEffect(() => {
     fetch("https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum", {

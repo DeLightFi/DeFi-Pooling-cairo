@@ -4,10 +4,10 @@ import { Container, Main } from "./LayoutElements";
 import Navbar from "./Navbar";
 
 
-export default function Layout({ children, connection, setConnection, setProvider, setAddress }) {
+export default function Layout({ children, connection, setConnection }) {
   return (
     <Container>
-      <Navbar connection={connection} setConnection={setConnection} setProvider={setProvider} setAddress={setAddress} />
+      <Navbar connection={connection} setConnection={setConnection} />
       <Main>
         {children}
       </Main>

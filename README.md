@@ -33,8 +33,7 @@ It is super gas efficient and there are even optimal scenarios where the yields 
 
 Get value, L2 calldata and task id from herodotus (to prove l1 states for current block)
 
-curl -X POST http://localhost:3000/api/herodotus \
-  -H "Content-Type: application/json" 
+curl -X POST http://localhost:3000/api/herodotus 
 
 Get Task status
 

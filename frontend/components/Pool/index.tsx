@@ -5,22 +5,26 @@ import PoolTabSelector from "./PoolTabSelector";
 import PoolTabStats from "./PoolTabStats";
 import PoolTabProof from "./PoolTabProof";
 import PoolTrade from "./PoolTrade";
+import { ConnectedStarknetWindowObject } from "@argent/get-starknet";
 
+interface PoolProps {
+  connection: ConnectedStarknetWindowObject;
+  setConnection: React.Dispatch<React.SetStateAction<ConnectedStarknetWindowObject>>;
+}
 
-const Pool = ({ }) => {
+export default function Pool({ connection, setConnection }: PoolProps) {
   const [mode, setMode] = useState("stats");
 
   return (
     <Container>
       <PoolTabSelector setMode={setMode} />
       {mode === "stats" ?
-        <PoolTabStats />
+        <PoolTabStats connection={connection} setConnection={setConnection} />
         :
-        <PoolTabProof />
+        <PoolTabProof connection={connection} setConnection={setConnection} />
       }
-      <PoolTrade />
+      <PoolTrade connection={connection} setConnection={setConnection} />
     </Container>
   );
 };
 
-export default Pool;

@@ -1,7 +1,7 @@
 import { Container } from "./PoolTabProofElements";
 
 
-const PoolTabProof = ({ }) => {
+const PoolTabProof = ({ connection, setConnection }) => {
   return (
     <Container>
       <div className="header">
