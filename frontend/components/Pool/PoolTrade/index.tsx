@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { formatNumber, getCgTokenPrice } from "../../../utils";
 import LogoNameEth from "./LogoNameEth";
 import { BiArrowFromTop } from 'react-icons/bi'
+import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 
 import { Container } from "./PoolTradeElements";
 import { connect, ConnectedStarknetWindowObject } from '@argent/get-starknet'
@@ -182,7 +183,7 @@ const PoolTrade = ({ connection, setConnection }: PoolProps) => {
         {mode === "deposit" ?
           <div className="btn selected" onClick={() => setMode('deposit')}>
             <div>
-              <FaLock />
+              <FaArrowDown />
             </div>
             <span>Deposit</span>
           </div>
@@ -195,7 +196,7 @@ const PoolTrade = ({ connection, setConnection }: PoolProps) => {
           <div className="btn selected" onClick={() => setMode('reedem')}>
             <span>Reedem</span>
             <div>
-              <FaLock />
+              <FaArrowUp />
             </div>
           </div>
           :
