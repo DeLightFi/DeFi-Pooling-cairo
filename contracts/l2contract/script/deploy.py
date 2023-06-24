@@ -8,7 +8,7 @@ def run_command(cmd):
 
 owner = "0x048df7F681Ee077C3F64eF4E5D8b4f3CCBE5A9Fb57f381b05588aF6b8Bf0fF81"
 l2vault = "0x080C23F201E014FEda37D2Abb2ad11a65cbBf109"
-pooling_hash = "0x02ce5c70fd8640c2765a09c0f336910a301bc78e8e8b533ae3d1089bf11c9af2"
+pooling_hash = "0x000bb1fe95dac8ffa28418c60c78aaa6c715e1e7314cb2ad5e254ff8d4816623"
 eth = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 name = "0x049"
 symbol = "0x03"

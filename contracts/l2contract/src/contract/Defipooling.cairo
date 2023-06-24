@@ -246,7 +246,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     const STALED_LIMIT_PERIOD : u64 = 360;
     const WAD : u256 = 1000000000000000000;
     const HALF_WAD : u256 = 500000000000000000;
-    const PARTICIPANT_FEES : u256 = 10000000000000000;
+    const FEES : u256 = 10000000000000000;
     const YEAR_TIMESTAMP : u64 = 31536000;
 
     struct Storage {
@@ -370,9 +370,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         }
 
         fn total_assets() -> u256 {
-            let current_rewards = participant_rewards();
-            let total_rewards = current_rewards.data_prover + current_rewards.l1_bridger + current_rewards.l2_bridger;
-            l2_reserve() + l2_to_l1_transit() + l1_reserve() + l1_to_l2_transit() - total_rewards
+            total_reserve() - total_rewards()
         }
 
         fn convert_to_shares(assets: u256) -> u256 {
@@ -883,73 +881,12 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
 
         // we need a second message to tell the amount we need to get from the bridge, as everyone is able to send money to the l1 pooling contract (accountability)
         let mut payload: Array<felt252> = ArrayTrait::new();
-        payload.append(0);
+        payload.append(1);
         payload.append(underlying_to_bridge.low.into());
         payload.append(underlying_to_bridge.high.into());
         send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
         init_stream(3, get_caller_address());
         BridgeFromL2(_l1_pooling::read(), underlying_to_bridge);
-    }
-
-    #[view]
-    fn check_to_bridge() -> u256 {
-        assert(limit_up_l2_assets() < l2_reserve(), 'ENOUGH_UNDERLYING_ON_L1');
-        l2_reserve() - ideal_l2_reserve_underlying()
-    }
-
-    #[external]
-    fn handle_bridge_from_l2_1() {
-        assert(limit_up_l2_assets() < l2_reserve(), 'ENOUGH_UNDERLYING_ON_L1');
-        let bridge = _bridge::read();
-        let token = _asset::read();
-        let underlying_to_bridge = l2_reserve() - ideal_l2_reserve_underlying();
-        token.approve(bridge.contract_address, underlying_to_bridge);
-    }
-
-    #[external]
-    fn handle_bridge_from_l2_2() {
-        assert(limit_up_l2_assets() < l2_reserve(), 'ENOUGH_UNDERLYING_ON_L1');
-        let bridge = _bridge::read();
-        let token = _asset::read();
-        let underlying_to_bridge = l2_reserve() - ideal_l2_reserve_underlying();
-        token.approve(bridge.contract_address, underlying_to_bridge);
-        bridge.initiate_withdraw(_l1_pooling::read() ,underlying_to_bridge);
-    }
-
-    #[external]
-    fn handle_bridge_from_l2_3() {
-        assert(limit_up_l2_assets() < l2_reserve(), 'ENOUGH_UNDERLYING_ON_L1');
-        let bridge = _bridge::read();
-        let token = _asset::read();
-        let underlying_to_bridge = l2_reserve() - ideal_l2_reserve_underlying();
-        token.approve(bridge.contract_address, underlying_to_bridge);
-        bridge.initiate_withdraw(_l1_pooling::read() ,underlying_to_bridge);
-        _l2_bridged_underying::write(_l2_bridged_underying::read() + underlying_to_bridge);
-
-        // we need a second message to tell the amount we need to get from the bridge, as everyone is able to send money to the l1 pooling contract (accountability)
-        let mut payload: Array<felt252> = ArrayTrait::new();
-        payload.append(0);
-        payload.append(underlying_to_bridge.low.into());
-        payload.append(underlying_to_bridge.high.into());
-    }
-
-    #[external]
-    fn handle_bridge_from_l2_4() {
-        assert(limit_up_l2_assets() < l2_reserve(), 'ENOUGH_UNDERLYING_ON_L1');
-        let bridge = _bridge::read();
-        let token = _asset::read();
-        let underlying_to_bridge = l2_reserve() - ideal_l2_reserve_underlying();
-        token.approve(bridge.contract_address, underlying_to_bridge);
-        bridge.initiate_withdraw(_l1_pooling::read() ,underlying_to_bridge);
-        
-        _l2_bridged_underying::write(_l2_bridged_underying::read() + underlying_to_bridge);
-
-        // we need a second message to tell the amount we need to get from the bridge, as everyone is able to send money to the l1 pooling contract (accountability)
-        let mut payload: Array<felt252> = ArrayTrait::new();
-        payload.append(0);
-        payload.append(underlying_to_bridge.low.into());
-        payload.append(underlying_to_bridge.high.into());
-        send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
     }
 
 
@@ -960,7 +897,7 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
         let bridge = _bridge::read();
         let underlying_to_bridge = ideal_l2_reserve_underlying() - l2_reserve();
         let mut payload: Array<felt252> = ArrayTrait::new();
-        payload.append(1);
+        payload.append(2);
         payload.append(underlying_to_bridge.low.into());
         payload.append(underlying_to_bridge.high.into());
         send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
@@ -1210,23 +1147,40 @@ fn _update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, 
 
     #[view]
     fn timestamp_since_participation(participant: ParticipantInfo) -> u64 {
-        get_block_timestamp() - participant.timestamp
+        if(participant.timestamp == 0_u64){
+            0
+        } else {
+            get_block_timestamp() - participant.timestamp
+        }
+
     }
+
 
     #[view]
     fn due_underlying(participant: ParticipantInfo) -> u256 {
-        let fees = mul_div_down(l2_reserve() + l2_to_l1_transit() + l1_reserve() + l1_to_l2_transit(), PARTICIPANT_FEES,WAD) ;
+        let fees = mul_div_down(_asset::read().balanceOf(get_contract_address())  + ( _l2_bridged_underying::read() - _l1_received_underying::read()) + _l2_bridged_underying::read() + (_l1_bridged_underying::read() - _l2_received_underying::read()), FEES,WAD);
+        
         if(fees==0){
             0
         } else{
-            let ulow : felt252 = timestamp_since_participation(participant).into();
-            let uhigh : felt252 = YEAR_TIMESTAMP.into();
-            let ulow2 : u128 = ulow.try_into().expect('not');
-            let uhigh2 : u128 = ulow.try_into().expect('not');
-            mul_div_down(fees, u256 {low: ulow2, high: 0}, u256 {low: uhigh2, high: 0})
+            let since_ts : felt252 = timestamp_since_participation(participant).into();
+            let year_ts : felt252 = YEAR_TIMESTAMP.into();
+            let since_ts_u : u128 = since_ts.try_into().expect('not');
+            let year_ts_u : u128 = year_ts.try_into().expect('not');
+            mul_div_down(fees, u256 {low: since_ts_u, high: 0}, u256 {low: year_ts_u, high: 0})
         }
     }
 
+    #[view]
+    fn total_reserve() -> u256 {
+        l2_reserve() + l2_to_l1_transit() + l1_reserve() + l1_to_l2_transit()
+    }
+
+    #[view]
+    fn total_rewards() -> u256 {
+        let current_rewards = participant_rewards();
+        current_rewards.data_prover + current_rewards.l1_bridger + current_rewards.l2_bridger
+    }
 
   fn init_stream(participant_type: felt252, caller:ContractAddress) {
         let current_rewards = participant_rewards();
