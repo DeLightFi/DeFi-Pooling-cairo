@@ -28,7 +28,7 @@ export const Container = styled.div`
     align-items: center;
 
     border-radius: 30px;
-    border: 1px solid #000;
+    outline: 1px solid #bebebe;
 
     font-size: 1.2vw;
     
@@ -42,7 +42,8 @@ export const Container = styled.div`
       align-items: center;
 
       &.selected{
-        border: 1px solid #000;
+        z-index: 1;
+        outline: 1px solid #000;
         border-radius: 30px;
       }
 

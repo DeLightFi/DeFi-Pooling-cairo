@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaLock } from "react-icons/fa";
+import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 
 import { Container } from "./PoolTradeElements";
 
@@ -14,7 +14,7 @@ const PoolTrade = ({ }) => {
         {mode === "deposit" ?
           <div className="btn selected" onClick={() => setMode('deposit')}>
             <div>
-              <FaLock />
+              <FaArrowDown />
             </div>
             <span>Deposit</span>
           </div>
@@ -27,7 +27,7 @@ const PoolTrade = ({ }) => {
           <div className="btn selected" onClick={() => setMode('reedem')}>
             <span>Reedem</span>
             <div>
-              <FaLock />
+              <FaArrowUp />
             </div>
           </div>
           :
