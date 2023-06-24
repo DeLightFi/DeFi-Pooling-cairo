@@ -27,7 +27,7 @@ export const Container = styled.div`
     justify-content: space-between;
     align-items: center;
 
-    border-radius: 30px;
+    border-radius: 60px;
     outline: 1px solid #25262d30;
 
     font-size: 1.2vw;
@@ -45,7 +45,7 @@ export const Container = styled.div`
         transition: outline 0.2s;
         z-index: 1;
         outline: 1px solid #000;
-        border-radius: 30px;
+        border-radius: 60px;
       }
 
       div{
@@ -57,7 +57,7 @@ export const Container = styled.div`
         justify-content: center;
         align-items: center;
 
-        border-radius: 30px;
+        border-radius: 60px;
         color: #fff;
         background-color: #000;
       }
@@ -116,7 +116,7 @@ export const Container = styled.div`
     button{
       height: 3.5vw;
       width: 100%;
-      border-radius: 30px;
+      border-radius: 60px;
       border: none;
       outline: none;
       color: #fff;
