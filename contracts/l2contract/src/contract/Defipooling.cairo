@@ -246,7 +246,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     const STALED_LIMIT_PERIOD : u64 = 360;
     const WAD : u256 = 1000000000000000000;
     const HALF_WAD : u256 = 500000000000000000;
-    const PERFORMANCE_FEES : u256 = 10000000000000000;
+    const FEES : u256 = 10000000000000000;
     const YEAR_TIMESTAMP : u64 = 31536000;
 
     struct Storage {
@@ -370,9 +370,7 @@ impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
         }
 
         fn total_assets() -> u256 {
-            let current_rewards = participant_rewards();
-            let total_rewards = current_rewards.data_prover + current_rewards.l1_bridger + current_rewards.l2_bridger;
-            l2_reserve() + l2_to_l1_transit() + l1_reserve() + l1_to_l2_transit() - total_rewards
+            total_reserve() - total_rewards()
         }
 
         fn convert_to_shares(assets: u256) -> u256 {
@@ -858,7 +856,6 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
 
     #[view]
     fn participant_rewards() -> ParticipantRewards {
-        let available_underlyings_data_prover = performance_since_participation(_data_prover::read());
         ParticipantRewards {
             data_prover: mul_div_down(due_underlying(_data_prover::read()), _data_provider_fee_share::read(),WAD),
             l1_bridger: mul_div_down(due_underlying(_l1_bridger::read()), _l1_bridger_fee_share::read(), WAD),
@@ -884,13 +881,14 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
 
         // we need a second message to tell the amount we need to get from the bridge, as everyone is able to send money to the l1 pooling contract (accountability)
         let mut payload: Array<felt252> = ArrayTrait::new();
-        payload.append(0);
+        payload.append(1);
         payload.append(underlying_to_bridge.low.into());
         payload.append(underlying_to_bridge.high.into());
         send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
         init_stream(3, get_caller_address());
         BridgeFromL2(_l1_pooling::read(), underlying_to_bridge);
     }
+
 
     #[external]
     fn handle_bridge_from_l1() {
@@ -899,7 +897,7 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
         let bridge = _bridge::read();
         let underlying_to_bridge = ideal_l2_reserve_underlying() - l2_reserve();
         let mut payload: Array<felt252> = ArrayTrait::new();
-        payload.append(1);
+        payload.append(2);
         payload.append(underlying_to_bridge.low.into());
         payload.append(underlying_to_bridge.high.into());
         send_message_to_l1_syscall(_l1_pooling::read(), payload.span());
@@ -909,45 +907,61 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
     }
 
     #[external]
-    fn submit_all_proof(block: felt252, proof_sizes_bytes_yearn_balance: Array<felt252>, proof_sizes_words_yearn_balance: Array<felt252>, proofs_concat_yearn_balance: Array<felt252>, proof_sizes_bytes_bridged_l1: Array<felt252>, proof_sizes_words_bridged_l1: Array<felt252>, proofs_concat_bridged_l1: Array<felt252>, proof_sizes_bytes_received_l1: Array<felt252>, proof_sizes_words_received_l1: Array<felt252>, proofs_concat_received_l1: Array<felt252>)  {
-        let is_new_balance = submit_proof_yearn_balance(block, proof_sizes_bytes_yearn_balance, proof_sizes_words_yearn_balance, proofs_concat_yearn_balance);
+    fn submit_all_proof(block: felt252, yearn_token_balance: u256, proof_sizes_bytes_bridged_l1: Array<felt252>, proof_sizes_words_bridged_l1: Array<felt252>, proofs_concat_bridged_l1: Array<felt252>, proof_sizes_bytes_received_l1: Array<felt252>, proof_sizes_words_received_l1: Array<felt252>, proofs_concat_received_l1: Array<felt252>)  {
+        let is_new_balance = submit_proof_yearn_balance(yearn_token_balance);
         let is_new_bridged_amount = submit_proof_bridged_l1(block, proof_sizes_bytes_bridged_l1, proof_sizes_words_bridged_l1, proofs_concat_bridged_l1);
         let is_new_received_amount = submit_proof_received_l1(block, proof_sizes_bytes_received_l1, proof_sizes_words_received_l1, proofs_concat_received_l1);
-        if(!is_new_balance ){ // need &&
-            if(!is_new_bridged_amount){
-                assert(is_new_received_amount, 'NOTHING_TO_UPDATE');
+        if(!is_new_bridged_amount ){ 
+            if(!is_new_balance){
+                assert(is_new_balance, 'NOTHING_TO_UPDATE');
+            }
+        }
+        if(!is_new_received_amount ){ 
+            if(!is_new_balance){
+                assert(is_new_balance, 'NOTHING_TO_UPDATE');
             }
         }
         init_stream(1, get_caller_address());
     }
 
-    fn submit_proof_yearn_balance(block: felt252,proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> bool {
-        let value = call_hero(block,_yearn_vault::read(), _yearn_token_balance_slot::read(), proof_sizes_bytes, proof_sizes_words, proofs_concat);
-        if(value == _yearn_token_balance::read()){
-            _yearn_token_balance::write(value);
-            true
-        } else {
+    fn submit_proof_yearn_balance(new_balance: u256) -> bool {
+        if(new_balance == _yearn_token_balance::read()){
             false
+        } else {
+            _yearn_token_balance::write(new_balance);
+            true
         }
     }
+
+    // Some issues with prooving vyper contract from herodotus, soon fixed! 
+    //fn submit_proof_yearn_balance(block: felt252,proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> bool {
+    //    let value = call_hero(block,_yearn_vault::read(), _yearn_token_balance_slot::read(), proof_sizes_bytes, proof_sizes_words, proofs_concat);
+    //    if(value == _yearn_token_balance::read()){
+    //        
+    //        false
+    //    } else {
+    //        _yearn_token_balance::write(value);
+    //        true
+    //    }
+    //}
 
     fn submit_proof_bridged_l1(block: felt252, proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> bool {
         let value = call_hero(block, _l1_pooling::read(), _pooling_bridged_underlying_slot::read(), proof_sizes_bytes, proof_sizes_words, proofs_concat);
         if(value == _l1_received_underying::read()){
+            false
+        } else {
             _l1_bridged_underying::write(value);
             true
-        } else {
-            false
         }
     }
 
     fn submit_proof_received_l1(block: felt252, proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> bool {
         let value = call_hero(block, _l1_pooling::read(), _pooling_received_underlying_slot::read(), proof_sizes_bytes, proof_sizes_words, proofs_concat);
         if(value == _l1_received_underying::read()){
+            false
+        } else {
             _l1_received_underying::write(value);
             true
-        } else {
-            false
         }
     }
 
@@ -964,7 +978,11 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
         _pending_withdrawal::write(0.into());
     }
 
-
+    #[external]
+    fn call_hero(block: felt252, account_address: felt252, slot: StorageSlot,proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> u256 {
+        let fact_registery = _fact_registery::read();
+        fact_registery.get_storage_uint(block, account_address, slot, proof_sizes_bytes, proof_sizes_words,proofs_concat)
+    }
 
     ///
     /// Internals
@@ -1016,30 +1034,37 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
     }
 
 
+    #[view]
     fn ideal_l2_reserve_underlying() -> u256 {
         mul_div_down(_ideal_l2_underlying_ratio::read(), total_assets(), WAD)
     }
 
+    #[view]
     fn limit_up_l2_assets() -> u256{
         ideal_l2_reserve_underlying() + mul_div_down(ideal_l2_reserve_underlying(), _rebalancing_threshold::read(), WAD) 
     }
 
+    #[view]
     fn limit_down_l2_assets() -> u256{
         ideal_l2_reserve_underlying() - mul_div_down(ideal_l2_reserve_underlying(), _rebalancing_threshold::read(), WAD) 
     }
 
+    #[view]
     fn l2_reserve() -> u256{
         _asset::read().balanceOf(get_contract_address()) 
     }
 
+    #[view]
     fn l2_to_l1_transit() -> u256 {
         _l2_bridged_underying::read() - _l1_received_underying::read()
     }
 
+    #[view]
     fn l1_reserve() -> u256 {
         _l2_bridged_underying::read()
     }
 
+    #[view]
     fn l1_to_l2_transit() -> u256 {
         _l1_bridged_underying::read() - _l2_received_underying::read()
     }
@@ -1052,10 +1077,7 @@ fn update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, l
         assert(!_l1_pooling::read().is_zero(), 'L1_POOLING_NOT_REGISTER');
     }
 
-    fn call_hero(block: felt252, account_address: felt252, slot: StorageSlot,proof_sizes_bytes: Array<felt252>, proof_sizes_words: Array<felt252>, proofs_concat: Array<felt252>) -> u256 {
-        let fact_registery = _fact_registery::read();
-        fact_registery.get_storage_uint(block, account_address, slot, proof_sizes_bytes, proof_sizes_words,proofs_concat)
-    }
+    
 
     fn share_price_underlying() -> u256 {
         convert_to_shares(WAD)
@@ -1122,33 +1144,43 @@ fn _update_fee_share(data_provider_fee_share: u256, l1_bridger_fee_share: u256, 
     _l2_bridger_fee_share::write(l2_bridger_fee_share);
 }
 
-    fn performance_since_participation(participant: ParticipantInfo) -> u256 {
-        if(share_price_underlying() <= participant.share_price){
-            0.into()
-        } else {
-            participant.share_price - share_price_underlying()
-        }
-    }
 
+    #[view]
     fn timestamp_since_participation(participant: ParticipantInfo) -> u64 {
-        get_block_timestamp() - participant.timestamp
+        if(participant.timestamp == 0_u64){
+            0
+        } else {
+            get_block_timestamp() - participant.timestamp
+        }
+
     }
 
+
+    #[view]
     fn due_underlying(participant: ParticipantInfo) -> u256 {
-        let performance_fees = mul_div_down(performance_since_participation(participant), PERFORMANCE_FEES,WAD) ;
-        let zero_u256 : u256 = 0;
-        if(performance_fees==0){
+        let fees = mul_div_down(_asset::read().balanceOf(get_contract_address())  + ( _l2_bridged_underying::read() - _l1_received_underying::read()) + _l2_bridged_underying::read() + (_l1_bridged_underying::read() - _l2_received_underying::read()), FEES,WAD);
+        
+        if(fees==0){
             0
         } else{
-            let ulow : felt252 = timestamp_since_participation(participant).into();
-            let uhigh : felt252 = YEAR_TIMESTAMP.into();
-            let ulow2 : u128 = ulow.try_into().expect('not');
-            let uhigh2 : u128 = ulow.try_into().expect('not');
-            mul_div_down(performance_fees, u256 {low: ulow2, high: 0}, u256 {low: uhigh2, high: 0})
+            let since_ts : felt252 = timestamp_since_participation(participant).into();
+            let year_ts : felt252 = YEAR_TIMESTAMP.into();
+            let since_ts_u : u128 = since_ts.try_into().expect('not');
+            let year_ts_u : u128 = year_ts.try_into().expect('not');
+            mul_div_down(fees, u256 {low: since_ts_u, high: 0}, u256 {low: year_ts_u, high: 0})
         }
-        
     }
 
+    #[view]
+    fn total_reserve() -> u256 {
+        l2_reserve() + l2_to_l1_transit() + l1_reserve() + l1_to_l2_transit()
+    }
+
+    #[view]
+    fn total_rewards() -> u256 {
+        let current_rewards = participant_rewards();
+        current_rewards.data_prover + current_rewards.l1_bridger + current_rewards.l2_bridger
+    }
 
   fn init_stream(participant_type: felt252, caller:ContractAddress) {
         let current_rewards = participant_rewards();
