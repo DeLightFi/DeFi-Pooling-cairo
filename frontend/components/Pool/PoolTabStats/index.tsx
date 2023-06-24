@@ -54,6 +54,7 @@ const PoolTabStats = ({ }) => {
               fill="transparent"
               fillOpacity="1"
             />
+            {/* <Tooltip cursor={{ stroke: "#25262d6a", strokeDasharray: 5 }} /> */}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
