@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
 import { FaLock } from "react-icons/fa";
 import styled from "styled-components";
-import { formatNumber } from "../../../utils";
+import { formatNumber, getCgTokenPrice } from "../../../utils";
 import LogoNameEth from "./LogoNameEth";
+import { BiArrowFromTop } from 'react-icons/bi'
 
 import { Container } from "./PoolTradeElements";
 import { connect, ConnectedStarknetWindowObject } from '@argent/get-starknet'
+import LogoNameEthBoost from "./LogoNameEthBoost";
+
+const UnderlyingList = styled.div`
+  display: flex;
+  flex-direction: column; 
+  gap: 2px;
+  align-items: center;
+  width: 100%;
+`
 
 
 const UnderlyingBox = styled.div`
@@ -13,11 +23,10 @@ const UnderlyingBox = styled.div`
   flex-direction: column;
   width: 100%;
   gap: 10px;
-  padding: 5px;
-  background-color: #161616;
-  border-left: solid 2px;
-  border-radius: 2px;
-  border-color: red;
+  padding: 10px;
+  background-color: #000000;
+  border-radius: 10px;
+
 `
 
 const UnderlyingRow = styled.div`
@@ -27,6 +36,15 @@ const UnderlyingRow = styled.div`
   padding-inline: 5px;
   gap: 5px;
   min-height: 25px;
+`
+const StyledOutput = styled.div`
+  font-size: 16px; // Increase the font size
+  font-weight: bold; // Make the font bold
+  padding-inline: 5px;
+  padding-block: 5px;
+  color: white;
+  text-align: right;
+  white-space: nowrap;
 `
 
 
@@ -70,16 +88,16 @@ const LightText = styled.div`
 `
 
 const MaxButton = styled.button`
-  background-color:black;
+  background-color:#e6e452;
   margin-left: 8px;
-  color: white;
+  color: black;
   font-size: 13px;
   padding: 4px;
   border-radius: 2px;
   border: none;
   cursor: pointer;
   &:hover {
-    box-shadow: 0px 0px 10px black;
+    box-shadow: 0px 0px 10px #e6e452;
   }
 `
 
@@ -95,6 +113,8 @@ const PoolTrade = ({ connection, setConnection }: PoolProps) => {
   const [ethToSharesRatio, setEthToSharesRatio] = useState<number>(1)
   const [userEthBalance, setUserEthBalance] = useState<number>(0)
   const [userYieldBalance, setUserYieldBalance] = useState<number>(0)
+  const [ethPrice, setEthPrice] = useState<number>(0)
+
 
 
   // const updateUserInfoAndSetDerivative = async () => {
@@ -108,8 +128,22 @@ const PoolTrade = ({ connection, setConnection }: PoolProps) => {
   // }
 
 
+
   useEffect(() => {
-    console.log(connection.account.address)
+    const fetchData = async () => {
+      const eth_price_ = await getCgTokenPrice();
+      setEthPrice(eth_price_)
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+
+    if (connection) {
+      console.log(connection.account.address)
+      console.log("connected shishhh")
+    }
   }, [connection])
 
 
@@ -173,54 +207,155 @@ const PoolTrade = ({ connection, setConnection }: PoolProps) => {
       {
         mode === "deposit" ?
           <>
-            <UnderlyingBox >
-              <UnderlyingRow>
-                <LogoNameEth />
-                <StyledInput
-                  type="number"
-                  value={
-                    depositInputValue
-                      ? depositInputValue
-                      : '0'
-                  }
-                  onChange={(event) =>
-                    handleAmountChangeDepositValue(event)
-                  }
-                />
-              </UnderlyingRow>
-              <UnderlyingRow>
-                <BalanceAndButton>
+            <UnderlyingList>
+              <UnderlyingBox >
+                <UnderlyingRow>
+                  <LogoNameEth />
+                  <StyledInput
+                    type="number"
+                    value={
+                      depositInputValue
+                        ? depositInputValue
+                        : '0'
+                    }
+                    onChange={(event) =>
+                      handleAmountChangeDepositValue(event)
+                    }
+                  />
+                </UnderlyingRow>
+                <UnderlyingRow>
+                  <BalanceAndButton>
+                    <LightText>
+                      <>
+                        Balance:{' '}
+                        {formatNumber(
+                          0
+                        )}
+                      </>
+                    </LightText>
+                    <MaxButton
+                      onClick={() => handleMaxUnderlyings()}
+                    >
+                      Max
+                    </MaxButton>
+                  </BalanceAndButton>
+
                   <LightText>
                     <>
-                      Balance:{' '}
-                      {formatNumber(
-                        0
-                      )}
+                      {depositInputValue
+                        ? depositInputValue
+                        : '0'}{' '}
+                      $
                     </>
                   </LightText>
-                  <MaxButton
-                    onClick={() => handleMaxUnderlyings()}
-                  >
-                    Max
-                  </MaxButton>
-                </BalanceAndButton>
-
-                <LightText>
-                  <>
-                    {depositInputValue
-                      ? depositInputValue
-                      : '0'}{' '}
-                    $
-                  </>
-                </LightText>
-              </UnderlyingRow>
-            </UnderlyingBox>
+                </UnderlyingRow>
+              </UnderlyingBox>
+              <BiArrowFromTop size={'25px'} color={'black'} />
+              <UnderlyingBox >
+                <UnderlyingRow>
+                  <LogoNameEthBoost />
+                  <StyledOutput>
+                    {parseFloat(depositOutputValue) == 0
+                      ? formatNumber(parseFloat(depositOutputValue))
+                      : '0'}
+                  </StyledOutput>
+                </UnderlyingRow>
+                <UnderlyingRow>
+                  <BalanceAndButton>
+                    <LightText>
+                      <>Balance: {formatNumber(userYieldBalance)}</>
+                    </LightText>
+                  </BalanceAndButton>
+                  <LightText>
+                    <>
+                      {depositOutputValue
+                        ? depositOutputValue
+                        : '0'}{' '}
+                      $
+                    </>
+                  </LightText>
+                </UnderlyingRow>
+              </UnderlyingBox>
+            </UnderlyingList>
             <div className="submit">
               <button>Submit</button>
             </div>
           </>
           :
           <>
+            <UnderlyingList>
+              <UnderlyingBox >
+                <UnderlyingRow>
+                  <LogoNameEthBoost />
+                  <StyledInput
+                    type="number"
+                    value={
+                      depositInputValue
+                        ? depositInputValue
+                        : '0'
+                    }
+                    onChange={(event) =>
+                      handleAmountChangeDepositValue(event)
+                    }
+                  />
+                </UnderlyingRow>
+                <UnderlyingRow>
+                  <BalanceAndButton>
+                    <LightText>
+                      <>
+                        Balance:{' '}
+                        {formatNumber(
+                          userYieldBalance
+                        )}
+                      </>
+                    </LightText>
+                    <MaxButton
+                      onClick={() => handleMaxUnderlyings()}
+                    >
+                      Max
+                    </MaxButton>
+                  </BalanceAndButton>
+
+                  <LightText>
+                    <>
+                      {depositInputValue
+                        ? depositInputValue
+                        : '0'}{' '}
+                      $
+                    </>
+                  </LightText>
+                </UnderlyingRow>
+              </UnderlyingBox>
+              <BiArrowFromTop size={'25px'} color={'black'} />
+              <UnderlyingBox >
+                <UnderlyingRow>
+                  <LogoNameEth />
+                  <StyledOutput>
+                    {parseFloat(depositOutputValue) == 0
+                      ? formatNumber(parseFloat(depositOutputValue))
+                      : '0'}
+                  </StyledOutput>
+                </UnderlyingRow>
+                <UnderlyingRow>
+                  <BalanceAndButton>
+                    <LightText>
+                      <>Balance: {formatNumber(userEthBalance)}</>
+                    </LightText>
+                  </BalanceAndButton>
+                  <LightText>
+                    <>
+                      {depositOutputValue
+                        ? depositOutputValue
+                        : '0'}{' '}
+                      $
+                    </>
+                  </LightText>
+                </UnderlyingRow>
+              </UnderlyingBox>
+            </UnderlyingList>
+            <div className="submit">
+              <button>Submit</button>
+            </div>
           </>
       }
     </Container>

@@ -34,3 +34,13 @@ export function formatNumber(num: number) {
         return Math.abs(num).toFixed(2)
     }
 }
+
+
+export async function getCgTokenPrice(): Promise<number> {
+    const key = "ethereum";
+    const response = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${key}&vs_currencies=usd`
+    )
+    const data = await response.json()
+    return parseFloat(data[key].usd)
+}
