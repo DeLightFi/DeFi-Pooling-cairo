@@ -4,6 +4,7 @@ import { Container } from "./PoolElements";
 import PoolTabSelector from "./PoolTabSelector";
 import PoolTabStats from "./PoolTabStats";
 import PoolTabProof from "./PoolTabProof";
+import PoolTabAbout from "./PoolTabAbout";
 import PoolTrade from "./PoolTrade";
 
 
@@ -13,10 +14,14 @@ const Pool = ({ }) => {
   return (
     <Container>
       <PoolTabSelector setMode={setMode} />
-      {mode === "stats" ?
+      {mode === "stats" &&
         <PoolTabStats />
-        :
+      }
+      {mode === "proof" &&
         <PoolTabProof />
+      }
+      {mode === "about" &&
+        <PoolTabAbout />
       }
       <PoolTrade />
     </Container>
