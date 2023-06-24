@@ -31,7 +31,7 @@ export default function App({ Component, pageProps }: AppProps) {
     new InjectedConnector({ options: { id: 'argentX' } }),
   ]
 
-  const [connection, setConnection] = useState<ConnectedStarknetWindowObject>(null);
+  const [connection, setConnection] = useState(null);
 
 
   return (

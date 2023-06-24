@@ -8,12 +8,7 @@ import PoolTabAbout from "./PoolTabAbout";
 import PoolTrade from "./PoolTrade";
 import { ConnectedStarknetWindowObject } from "@argent/get-starknet";
 
-interface PoolProps {
-  connection: ConnectedStarknetWindowObject;
-  setConnection: React.Dispatch<React.SetStateAction<ConnectedStarknetWindowObject>>;
-}
-
-export default function Pool({ connection, setConnection }: PoolProps) {
+export default function Pool({ connection, setConnection }) {
   const [mode, setMode] = useState("stats");
 
   return (

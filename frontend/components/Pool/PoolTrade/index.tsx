@@ -102,12 +102,8 @@ const MaxButton = styled.button`
   }
 `
 
-interface PoolProps {
-  connection: ConnectedStarknetWindowObject;
-  setConnection: React.Dispatch<React.SetStateAction<ConnectedStarknetWindowObject>>;
-}
 
-const PoolTrade = ({ connection, setConnection }: PoolProps) => {
+const PoolTrade = ({ connection, setConnection }) => {
   const [mode, setMode] = useState("deposit");
   const [depositInputValue, setDepositInputValue] = useState<string>("0")
   const [depositOutputValue, setDepositOutputValue] = useState<string>("0")
@@ -140,13 +136,10 @@ const PoolTrade = ({ connection, setConnection }: PoolProps) => {
   }, []);
 
   useEffect(() => {
-
     if (connection) {
       console.log(connection.account.address)
-      console.log("connected shishhh")
     }
   }, [connection])
-
 
 
   const handleAmountChangeDepositValue = (

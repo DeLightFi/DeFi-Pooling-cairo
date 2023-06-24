@@ -1,7 +1,7 @@
 import Pool from "../components/Pool";
 
-export default function AppDashboard() {
+export default function AppDashboard({ connection, setConnection }) {
   return (
-    <Pool connection={null} setConnection={null} />
+    <Pool connection={connection} setConnection={setConnection} />
   );
 }
