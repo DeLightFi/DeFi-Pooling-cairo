@@ -28,7 +28,7 @@ export const Container = styled.div`
     align-items: center;
 
     border-radius: 30px;
-    outline: 1px solid #bebebe;
+    outline: 1px solid #25262d30;
 
     font-size: 1.2vw;
     
@@ -42,6 +42,7 @@ export const Container = styled.div`
       align-items: center;
 
       &.selected{
+        transition: outline 0.2s;
         z-index: 1;
         outline: 1px solid #000;
         border-radius: 30px;
@@ -75,6 +76,40 @@ export const Container = styled.div`
   .value{
     display: flex;
     flex-direction: column;
+
+    span{
+      font-size: 1vw;
+      font-weight: 500;
+    }
+
+    input{
+      height: 3.5vw;
+      font-family: inherit;
+      width: 100%;
+      border: 1px solid #25262d30;
+      border-radius: 5px;
+      outline: 0;
+      font-size: 0.8rem;
+      color: #000000;
+      padding: 2% 5%;
+      background: transparent;
+      border-image-slice: 1;
+
+      &::placeholder {
+        color: #25262d30;
+      }
+
+      :-webkit-autofill{
+        -webkit-text-fill-color: ${({ theme }) => theme.colors.color1} !important;
+      }
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus, 
+    input:-webkit-autofill:active{
+        -webkit-box-shadow: ${(props) => `0 0 0 30px ${props.theme.colors.bg2} inset !important`};
+    }
   }
 
   .submit{
@@ -82,8 +117,19 @@ export const Container = styled.div`
       height: 3.5vw;
       width: 100%;
       border-radius: 30px;
+      border: none;
+      outline: none;
       color: #fff;
       background-color: #000;
+
+      font-family: inherit;
+      font-size: 1.2vw;
+
+      cursor: pointer;
+
+      &:hover{
+        background-color: #25262d;
+      }
     }
   }
 `;

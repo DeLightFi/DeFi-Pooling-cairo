@@ -36,12 +36,14 @@ const PoolTrade = ({ }) => {
           </div>
         }
       </div>
+      <br />
       <div className="value">
         <span>How much</span>
-        <input type="text" />
+        <input type="number" placeholder={mode === "reedem" ? "yvETH 1" : "ETH 1"} />
       </div>
+      <br />
       <div className="submit">
-        <button>Submit</button>
+        <button>SUBMIT</button>
       </div>
     </Container>
   );
