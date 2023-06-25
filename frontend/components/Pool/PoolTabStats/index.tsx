@@ -101,6 +101,7 @@ const PoolTabStats = ({ connection, setConnection }) => {
             <div />
             <div style={{ width: `${58.5}%` }} />
           </div>
+          <span className="value" style={{ marginLeft: `calc(${58.5}% - 10%)` }}>{`${58.5}%`}</span>
         </div>
       </div>
     </Container>

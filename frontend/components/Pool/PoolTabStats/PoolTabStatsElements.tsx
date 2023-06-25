@@ -185,6 +185,13 @@ export const Container = styled.div`
           border-radius: 10px;
         }
       }
+
+      .value{
+        color: #e6e452;
+        font-size: 1.4vw;
+        width: 20%;
+        text-align: center;
+      }
     }
   }
 `;
