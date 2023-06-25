@@ -123,7 +123,7 @@ const PoolTabStats = ({ connection, setConnection }) => {
   return (
     <Container>
       <div className="header">
-        <div />
+        <img src='https://altcoinsbox.com/wp-content/uploads/2023/03/yearn.finance-logo.webp' alt='yearn' />
         <span>Yearn Ethereum</span>
         <span>yvWETH</span>
       </div>
