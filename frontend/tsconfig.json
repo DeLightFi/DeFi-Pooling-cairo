@@ -23,7 +23,8 @@
     "**/*.ts",
     "**/*.tsx",
     "pages/**/*",
-    "src/**/*", "api",
+    "src/**/*",
+    "api",
   ],
   "exclude": [
     "node_modules"

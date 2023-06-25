@@ -70,12 +70,12 @@ const PoolTabProof = ({ connection, setConnection }) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [l1Capital, totalCapital] = await Promise.all([
+      const [l2Capital, totalCapital] = await Promise.all([
         fetchL2Allocation(),
         fetchTvl()
       ]);
 
-      const l2_allocation = l1Capital / totalCapital
+      const l2_allocation = l2Capital / totalCapital
       setL2Allocation(l2_allocation * 100);
     };
 
@@ -111,6 +111,8 @@ const PoolTabProof = ({ connection, setConnection }) => {
         l1_received: l1Received,
         l1_bridged: l1Bridged
       })
+      console.log(apiResponse)
+
       setL1Data({
         y_balance: parseFloat(apiResponse.balancedProofValue),
         l1_received: parseFloat(apiResponse.receivedProofValue),
@@ -129,13 +131,13 @@ const PoolTabProof = ({ connection, setConnection }) => {
 
     setTryL2Bridge(true)
 
-    if (l2Allocation >= 5) {
-      setErrorMessageL2Bridge("Bridging threshold not reach")
+    if (!connection) {
+      setErrorMessageL2Bridge("Connect Wallet Fist")
       return
     }
 
-    if (!connection) {
-      setErrorMessageL2Bridge("Connect Wallet Fist")
+    if (l2Allocation < 15) {
+      setErrorMessageL2Bridge("Bridging threshold not reach")
       return
     }
 
@@ -233,7 +235,7 @@ const PoolTabProof = ({ connection, setConnection }) => {
 
     setTryL1Bridge(true)
 
-    if (l2Allocation <= 15) {
+    if (l2Allocation <= 5) {
       setErrorMessageL1Bridge("Bridging threshold not reach")
       return
     }
@@ -316,7 +318,7 @@ const PoolTabProof = ({ connection, setConnection }) => {
           <div>
             {errorMessageL2Bridge}
           </div>
-          <button onClick={handleL1Bridge}>Bridge</button>
+          <button onClick={handleL1Bridge}>L1 Bridge</button>
           <div>
             {errorMessageL1Bridge}
 

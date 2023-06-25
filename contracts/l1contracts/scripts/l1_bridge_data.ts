@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 import { ethGetStorageAt, proofOfOwnership } from "./get_storage_slot";
 
 async function main() {
-    const POOLING = "0x4559035A77Cfbbcc1af18c47118e90A89D7C1673"
+    const POOLING = "0xb273c84Af2C533934b5eBcaCE450427c30059dB6"
     const l1Pooling = await ethers.getContractAt("L1Pooling", POOLING);
 
     const receivedEthBalance = await l1Pooling.receivedEthBalance()

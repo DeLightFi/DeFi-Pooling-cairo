@@ -132,9 +132,13 @@ const PoolTabStats = ({ connection, setConnection }) => {
         fetchL2Allocation(),
         fetchTvl()
       ]);
+      if (totalCapital == 0) {
+        setL1Allocation(0);
+      } else {
+        const l2_allocation = l1Capital / totalCapital
+        setL1Allocation(100 - (l2_allocation * 100));
+      }
 
-      const l2_allocation = l1Capital / totalCapital
-      setL1Allocation(100 - (l2_allocation * 100));
     };
 
     fetchDataP();
@@ -334,7 +338,7 @@ const PoolTabStats = ({ connection, setConnection }) => {
                   </AddressText>
                   <PendingRewardsText>
                     {
-                      (dataProviderRewards.pendingRewards)
+                      (dataProviderRewards.pendingRewards.toPrecision(2))
                     }
                   </PendingRewardsText>
                 </RewardBox>
@@ -352,7 +356,7 @@ const PoolTabStats = ({ connection, setConnection }) => {
                   </AddressText>
                   <PendingRewardsText>
                     {
-                      (l1BridgerRewards.pendingRewards)
+                      (l1BridgerRewards.pendingRewards.toPrecision(2))
                     }
                   </PendingRewardsText>
                 </RewardBox>
