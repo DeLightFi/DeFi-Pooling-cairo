@@ -211,7 +211,7 @@ export function isAddress(addr: string | null | undefined): string | false {
 }
 
 // shorten the checksummed version of the input address to have 0x + 4 characters at start and end
-export function shortenAddress(address: string, chars = 4): string {
+export function shortenAddress(address: string, chars = 3): string {
     const parsed = isAddress(address)
     if (!parsed) {
         throw Error(`Invalid 'address' parameter '${address}'.`)
@@ -224,6 +224,54 @@ export async function fetchL2Allocation(): Promise<number> {
     const calldata: Call = {
         contractAddress: BOOSTED_ETH,
         entrypoint: 'l2_reserve',
+        calldata: []
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        return (parseFloat(number.toFelt(data.result[0])) / 1000000000000000000)
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+
+
+
+export async function fetchL2L1Allocation(): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'l2_to_l1_transit',
+        calldata: []
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        return (parseFloat(number.toFelt(data.result[0])) / 1000000000000000000)
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+export async function fetchL1Allocation(): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'l1_reserve',
+        calldata: []
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        return (parseFloat(number.toFelt(data.result[0])) / 1000000000000000000)
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+export async function fetchL1L2Allocation(): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'l1_to_l2_transit',
         calldata: []
     }
     try {

@@ -11,7 +11,7 @@ import {
 
 import { Container } from "./PoolTabStatsElements";
 import CustomTooltip from "./ChartCustomTooltip";
-import { fetchlastDataProverAddress, fetchlastL1BridgerAddress, fetchlastL2BridgerAddress, fetchTotalRewards, fetchTvl, formatNumber, shortenAddress } from "../../../utils";
+import { fetchL1Allocation, fetchL1L2Allocation, fetchL2Allocation, fetchL2L1Allocation, fetchlastDataProverAddress, fetchlastL1BridgerAddress, fetchlastL2BridgerAddress, fetchTotalRewards, fetchTvl, formatNumber, shortenAddress } from "../../../utils";
 import styled from "styled-components";
 
 interface IUserReward {
@@ -21,7 +21,7 @@ interface IUserReward {
 
 
 const RowData = styled.div`
-width: 40%;
+width: 70%;
   display: flex;
   flex-direction: row; 
   gap: 6px;
@@ -37,10 +37,26 @@ const TVLData = styled.div`
   justify-content: space-between;
 `
 
+const Flexrow = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  align-items: center;
+`
+
+const FlexCol = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`
+
+
+
+
 const RewardsSpace = styled.div`
   display: flex;
   flex-direction: column; 
-  gap: 3px;
+  gap: 20px;
 `
 
 const RewardsData = styled.div`
@@ -54,6 +70,9 @@ const RewardBox = styled.div`
   display: flex;
   flex-direction: row; 
   justify-content: space-between;
+  gap: 30px;
+  align-items: left;
+
 `
 const AddressText = styled.div`
   font-weight: light;
@@ -97,15 +116,35 @@ const PoolTabStats = ({ connection, setConnection }) => {
   const [dataProviderRewards, setDataProviderRewards] = useState<IUserReward>();
   const [l1BridgerRewards, setL1BridgerRewards] = useState<IUserReward>();
   const [l2BridgerRewards, setL2BridgerRewards] = useState<IUserReward>();
+  const [l2Alloc, setL2Alloc] = useState<number>(0);
+  const [l2l1Alloc, setL2L1Alloc] = useState<number>(0);
+  const [l1Alloc, setL1Alloc] = useState<number>(0);
+  const [l1l2Alloc, setL1L2Alloc] = useState<number>(0);
+
 
   const [tvl, setTvl] = useState<number>(0)
+  const [l1Allocation, setL1Allocation] = useState<number>(0)
+
+
+  useEffect(() => {
+    const fetchDataP = async () => {
+      const [l1Capital, totalCapital] = await Promise.all([
+        fetchL2Allocation(),
+        fetchTvl()
+      ]);
+
+      const l2_allocation = l1Capital / totalCapital
+      setL1Allocation(100 - (l2_allocation * 100));
+    };
+
+    fetchDataP();
+  }, []);
 
   useEffect(() => {
     fetch("https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum", {
       "body": "{\"query\":\"{\\n\\t\\t\\tvaultDailySnapshots(\\n\\t\\t\\t\\twhere: {vault: \\\"0xa258c4606ca8206d8aa700ce2143d7db854d168c\\\"}\\n\\t\\t\\t\\torderBy: timestamp\\n\\t\\t\\t\\torderDirection: asc\\n\\t\\t\\t\\tfirst: 1000\\n\\t\\t\\t) {\\n\\t\\t\\t\\tpricePerShare\\n\\t\\t\\t\\ttotalValueLockedUSD\\n\\t\\t\\t\\ttimestamp\\n\\t\\t\\t}\\n\\t\\t}\"}",
       "method": "POST"
     }).then(response => response.json()).then(data => setData(data.data.vaultDailySnapshots));
-
 
     const fetchData = async () => {
       const [a, b, c, d, tvl] = await Promise.all([
@@ -138,7 +177,22 @@ const PoolTabStats = ({ connection, setConnection }) => {
 
     };
 
+    const fetchDataSpread = async () => {
+      const [a, b, c, d] = await Promise.all([
+        fetchL2Allocation(),
+        fetchL2L1Allocation(),
+        fetchL1Allocation(),
+        fetchL1L2Allocation(),
+      ]);
+      setL2Alloc(a)
+      setL2L1Alloc(b)
+      setL1Alloc(c)
+      setL1L2Alloc(d)
+    };
+
     fetchData();
+    fetchDataSpread();
+
 
   }, []);
 
@@ -188,17 +242,52 @@ const PoolTabStats = ({ connection, setConnection }) => {
       </div>
       <div className="stats">
         <RowData>
-          <TVLData>
-            <BigText>
-              Mirror TVL
-            </BigText>
-            <HugeText>
-              {formatNumber(tvl)}
-            </HugeText>
-            <HugeText>
-              ETH
-            </HugeText>
-          </TVLData>
+          <RewardsSpace>
+
+            <TVLData>
+              <BigText>
+                Mirror TVL
+              </BigText>
+              <HugeText>
+                {formatNumber(tvl)}
+              </HugeText>
+
+            </TVLData>
+            <Flexrow>
+              <FlexCol>
+                <LightText>
+                  L2 Reserve
+                </LightText>
+                <BigText>
+                  {l2Alloc.toPrecision(2)}
+                </BigText>
+              </FlexCol>
+              <FlexCol>
+                <LightText>
+                L2 -> l1
+                </LightText>
+                <BigText>
+                  {l2l1Alloc.toPrecision(2)}
+                </BigText>
+              </FlexCol>
+              <FlexCol>
+                <LightText>
+                  L1 Reserve
+                </LightText>
+                <BigText>
+                  {l1Alloc.toPrecision(2)}
+                </BigText>
+              </FlexCol>
+              <FlexCol>
+                <LightText>
+              L1 -> l2
+                </LightText>
+                <BigText>
+                  {l1l2Alloc.toPrecision(2)}
+                </BigText>
+              </FlexCol>
+            </Flexrow>
+          </RewardsSpace>
           <RewardsSpace>
             <BigText>
               Protocol Participants
@@ -208,13 +297,27 @@ const PoolTabStats = ({ connection, setConnection }) => {
               <RewardsData>
                 <RewardBox>
                   <AddressText>
+                    Participant
+                  </AddressText>
+                  <AddressText>
+                    Address
+                  </AddressText>
+                  <AddressText>
+                    Rewards
+                  </AddressText>
+                </RewardBox>
+
+
+                <RewardBox>
+                  <AddressText>
+                    Data Provider
+                  </AddressText>
+                  <AddressText>
                     {
                       dataProviderRewards.user_address == "0x0" ?
                         "0"
                         :
                         shortenAddress(dataProviderRewards.user_address)
-
-
 
                     }
                   </AddressText>
@@ -226,6 +329,9 @@ const PoolTabStats = ({ connection, setConnection }) => {
                 </RewardBox>
 
                 <RewardBox>
+                  <AddressText>
+                    L1 Bridger
+                  </AddressText>
                   <AddressText>
                     {
                       l1BridgerRewards.user_address == "0x0" ?
@@ -243,6 +349,9 @@ const PoolTabStats = ({ connection, setConnection }) => {
 
                 <RewardBox>
                   <AddressText>
+                    L2 Bridger
+                  </AddressText>
+                  <AddressText>
                     {
                       l2BridgerRewards.user_address == "0x0" ?
                         "0"
@@ -252,7 +361,7 @@ const PoolTabStats = ({ connection, setConnection }) => {
                   </AddressText>
                   <PendingRewardsText>
                     {
-                      (l2BridgerRewards.pendingRewards)
+                      (l2BridgerRewards.pendingRewards.toPrecision(2))
                     }
                   </PendingRewardsText>
                 </RewardBox>
@@ -265,14 +374,15 @@ const PoolTabStats = ({ connection, setConnection }) => {
         </RowData>
 
         <div className="repartition">
-          <span>Pool Repartition</span>
+          <span>L1 allocation</span>
           <div>
             <div />
-            <div style={{ width: `${58.5}%` }} />
+            <div style={{ width: `${l1Allocation}%` }} />
           </div>
-          <span className="value" style={{ marginLeft: `calc(${58.5}% - 10%)` }}>{`${58.5}%`}</span>
+          <span className="value" style={{ marginLeft: `calc(${l1Allocation}% - 10%)` }}>{`${l1Allocation.toPrecision(2)}%`}</span>
           <br />
-          <span className="infos">The ideal pool repartition is <b>10%</b>. In order to equilibrate this value, you have the possibility to bridge funds using the <FaLayerGroup /> tab.</span>
+          <span className="infos">The mirror Vault apy is equal to the L1Allocation multiplied by the APY of the L1 underlying strategies.
+            In order to equilibrate this value, you have the possibility to bridge funds using the <FaLayerGroup /> tab.</span>
         </div>
       </div>
     </Container>
