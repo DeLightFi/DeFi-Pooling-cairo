@@ -3,6 +3,7 @@ import { ThemeProvider, DefaultTheme } from 'styled-components'
 import { useState } from 'react'
 import Head from 'next/head'
 import { StarknetConfig, InjectedConnector } from '@starknet-react/core'
+import { WebWalletConnector } from "@argent/starknet-react-webwallet-connector";
 
 import GlobalStyle from '../components/globalstyles'
 import Layout from "../components/Layout";
@@ -29,6 +30,7 @@ export default function App({ Component, pageProps }: AppProps) {
   const connectors = [
     new InjectedConnector({ options: { id: 'braavos' } }),
     new InjectedConnector({ options: { id: 'argentX' } }),
+    new WebWalletConnector({ url: "https://web.hydrogen.argent47.net" }),
   ]
 
   const [connection, setConnection] = useState(null);
@@ -36,7 +38,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <>
-      <StarknetConfig connectors={connectors}>
+      <StarknetConfig autoConnect connectors={connectors}>
         <Head>
           <title>Mirror - Bringing L1 DeFi to Starknet</title >
         </Head >
