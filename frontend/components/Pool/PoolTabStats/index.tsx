@@ -10,6 +10,7 @@ import {
 } from "recharts";
 
 import { Container } from "./PoolTabStatsElements";
+import CustomTooltip from "./ChartCustomTooltip";
 
 
 const PoolTabStats = ({ connection, setConnection }) => {
@@ -55,7 +56,10 @@ const PoolTabStats = ({ connection, setConnection }) => {
               fill="transparent"
               fillOpacity="1"
             />
-            {/* <Tooltip cursor={{ stroke: "#25262d6a", strokeDasharray: 5 }} /> */}
+            <Tooltip
+              content={<CustomTooltip payload={data} />}
+              cursor={false}
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
