@@ -49,8 +49,16 @@ export const Container = styled.div`
     }
   }
 
+  .subtitle{
+    height: 10%;
+    display: flex;
+    align-items: center;
+    font-size: 1.2vw;
+    font-weight: 600;
+  }
+
   .equilibrate{
-    height: 20%;
+    height: 30%;
     width: 100%;
 
     display: flex;
@@ -113,7 +121,7 @@ export const Container = styled.div`
       padding: 0 2%;
       display: flex;
       flex-direction: column;
-      justify-content: left;
+      justify-content: center;
       gap: 4%;
 
       >button{
@@ -138,7 +146,7 @@ export const Container = styled.div`
   }
 
   .proof{
-    height: 35%;
+    height: 40%;
     width: 100%;
 
     display: flex;
@@ -191,7 +199,7 @@ export const Container = styled.div`
       padding: 0 2%;
       display: flex;
       flex-direction: column;
-      justify-content: left;
+      justify-content: center;
       gap: 4%;
 
       >button{

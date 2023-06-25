@@ -9,7 +9,7 @@ const PoolTabProof = ({ connection, setConnection }) => {
         <span>Yearn Ethereum</span>
         <span>yvWETH</span>
       </div>
-      <h3>Equilibrate the pool</h3>
+      <span className="subtitle">Equilibrate the pool</span>
       <div className="equilibrate">
         <div className="repartition">
           <span>Pool Repartition</span>
@@ -24,7 +24,7 @@ const PoolTabProof = ({ connection, setConnection }) => {
           <button>Bridge</button>
         </div>
       </div>
-      <h3>Submit a proof</h3>
+      <span className="subtitle">Submit a proof</span>
       <div className="proof">
         <div className="figures">
           <div>
