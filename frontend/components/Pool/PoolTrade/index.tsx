@@ -89,6 +89,12 @@ const LightText = styled.div`
   font-size: small;
 `
 
+const ErrorMessage = styled.div`
+  font-weight: light;
+  color: #0000008a;
+  font-size: small;
+`
+
 const MaxButton = styled.button`
   background-color:#e6e452;
   margin-left: 8px;
@@ -112,13 +118,20 @@ interface PoolTradeProps {
 const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
   const [mode, setMode] = useState("deposit");
   const [depositInputValue, setDepositInputValue] = useState<string>("0")
+  const [redeemInputValue, setRedeemInputValue] = useState<string>("0")
+
   const [depositOutputValue, setDepositOutputValue] = useState<string>("0")
+  const [redeemOutputValue, setRedeemOutputValue] = useState<string>("0")
+
   const [ethToSharesRatio, setEthToSharesRatio] = useState<number>(1)
   const [userEthBalance, setUserEthBalance] = useState<number>(0)
   const [userYieldBalance, setUserYieldBalance] = useState<number>(0)
   const [ethPrice, setEthPrice] = useState<number>(0)
-  const [errorMessage, setErrorMessage] = useState<string>("")
-  const [tTryDeposit, setTryDeposit] = useState<boolean>(false)
+  const [errorMessageDeposit, setErrorMessageDeposit] = useState<string>("")
+  const [errorMessageRedeem, setErrorMessageRedeem] = useState<string>("")
+
+  const [tryDeposit, setTryDeposit] = useState<boolean>(false)
+  const [tryRedeem, setTryRedeem] = useState<boolean>(false)
 
 
 
@@ -180,23 +193,49 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
   }
 
 
+  const handleAmountChangeRedeemValue = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+
+    if (!event.target.value || parseFloat(event.target.value) < 0) {
+      setRedeemInputValue('0')
+      setRedeemOutputValue('0')
+    } else {
+      // Don't round the value while the user is typing
+      const newValue = event.target.value
+      if (parseFloat(newValue) == 0) {
+        setRedeemInputValue(newValue)
+        setRedeemOutputValue('0')
+      } else {
+        setRedeemInputValue(newValue)
+        setRedeemOutputValue((parseFloat(newValue) / ethToSharesRatio).toString())
+      }
+    }
+  }
+
+
   const handleMaxUnderlyings = () => {
     setDepositInputValue((userEthBalance / 1000000000000000000).toString())
     setDepositOutputValue((userEthBalance * ethToSharesRatio / 1000000000000000000).toString())
   }
 
 
+  const handleMaxBoostedUnderlyings = () => {
+    setRedeemInputValue((userYieldBalance / 1000000000000000000).toString())
+    setRedeemOutputValue(((userYieldBalance / ethToSharesRatio) / 1000000000000000000).toString())
+  }
+
   async function handleDeposit() {
 
     setTryDeposit(true)
 
     if (parseFloat(depositInputValue) == 0) {
-      setErrorMessage("Invalid Amount")
+      setErrorMessageDeposit("Invalid Amount")
       return
     }
 
     if (!connection) {
-      setErrorMessage("Connect Wallet Fist")
+      setErrorMessageDeposit("Connect Wallet Fist")
       return
     }
 
@@ -223,8 +262,53 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
     )
       .catch((error) => {
         console.log(error)
-        setErrorMessage("error performing call")
+        setErrorMessageDeposit("error performing call")
         setTryDeposit(false)
+      })
+  }
+
+
+  async function handleRedeem() {
+
+    setTryRedeem(true)
+
+
+
+    if (!connection) {
+      setErrorMessageRedeem("Connect Wallet Fist")
+      return
+    }
+
+    if (parseFloat(redeemInputValue) == 0 || parseFloat(redeemInputValue) * 1000000000000000000 > userYieldBalance) {
+      setErrorMessageRedeem("Invalid Amount")
+      return
+    }
+
+    console.log("started")
+
+    const call_approve: Call = {
+      contractAddress: BOOSTED_ETH,
+      entrypoint: "approve",
+      calldata: [BOOSTED_ETH, (parseFloat(redeemInputValue) * 1000000000000000000), 0]
+    }
+
+    const call_redeem: Call = {
+      contractAddress: BOOSTED_ETH,
+      entrypoint: "redeem",
+      calldata: [(parseFloat(redeemInputValue) * 1000000000000000000), 0, connection.account.address, connection.account.address]
+    }
+
+    await connection.account.execute(
+      [call_approve, call_redeem]
+    ).then(
+      () => {
+        setTryRedeem(false)
+      }
+    )
+      .catch((error) => {
+        console.log(error)
+        setErrorMessageRedeem("error performing call")
+        setTryRedeem(false)
       })
   }
 
@@ -233,7 +317,7 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
 
   return (
     <Container>
-      <span className="title">Access top L1 yields</span>
+      <span className="title">Instant L1 Share Trade  </span>
       <div className="trade">
         {mode === "deposit" ?
           <div className="btn selected" onClick={() => setMode('deposit')}>
@@ -328,10 +412,20 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
                 </UnderlyingRow>
               </UnderlyingBox>
             </UnderlyingList>
-            <div className="submit" onClick={handleDeposit}>
-              <button>{mode == "deposit" ?
-                "Deposit" : "Redeem"}</button>
-            </div>
+            <ErrorMessage>
+              {errorMessageDeposit}
+            </ErrorMessage>
+            {
+              tryDeposit == false ?
+                <div className="submit" onClick={handleDeposit}>
+                  <button>Deposit</button>
+                </div>
+                :
+                <div className="submit" >
+                  <button>Loading ...</button>
+                </div>
+            }
+
           </>
           :
           <>
@@ -342,12 +436,12 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
                   <StyledInput
                     type="number"
                     value={
-                      depositInputValue
-                        ? depositInputValue
+                      redeemInputValue
+                        ? redeemInputValue
                         : '0'
                     }
                     onChange={(event) =>
-                      handleAmountChangeDepositValue(event)
+                      handleAmountChangeRedeemValue(event)
                     }
                   />
                 </UnderlyingRow>
@@ -356,13 +450,11 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
                     <LightText>
                       <>
                         Balance:{' '}
-                        {formatNumber(
-                          userYieldBalance
-                        )}
+                        {formatNumber(userYieldBalance / 1000000000000000000)}
                       </>
                     </LightText>
                     <MaxButton
-                      onClick={() => handleMaxUnderlyings()}
+                      onClick={() => handleMaxBoostedUnderlyings()}
                     >
                       Max
                     </MaxButton>
@@ -370,9 +462,7 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
 
                   <LightText>
                     <>
-                      {depositInputValue
-                        ? depositInputValue
-                        : '0'}{' '}
+                      {formatNumber(parseFloat(redeemInputValue) * ethPrice)}{' '}
                       $
                     </>
                   </LightText>
@@ -383,29 +473,42 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
                 <UnderlyingRow>
                   <LogoNameEth />
                   <StyledOutput>
-                    {parseFloat(depositOutputValue)}
+                    {formatNumber(parseFloat(redeemOutputValue))}
                   </StyledOutput>
                 </UnderlyingRow>
                 <UnderlyingRow>
                   <BalanceAndButton>
                     <LightText>
-                      <>Balance: {formatNumber(userEthBalance)}</>
+                      <>Balance: {formatNumber(userEthBalance / 1000000000000000000)}</>
                     </LightText>
                   </BalanceAndButton>
                   <LightText>
                     <>
-                      {depositOutputValue
-                        ? depositOutputValue
-                        : '0'}{' '}
+                      {formatNumber(parseFloat(redeemOutputValue) * ethPrice)}{' '}
+
                       $
                     </>
                   </LightText>
                 </UnderlyingRow>
               </UnderlyingBox>
             </UnderlyingList>
-            <div className="submit">
-              <button>Submit</button>
-            </div>
+            <ErrorMessage>
+              {errorMessageRedeem}
+            </ErrorMessage>
+            {
+              tryRedeem == false ?
+                <div className="submit" onClick={handleRedeem}>
+                  <button>Redeem</button>
+                </div>
+                :
+                <>
+                  <div className="submit">
+                    <button>Loading..</button>
+                  </div>
+                </>
+
+            }
+
           </>
       }
     </Container>
