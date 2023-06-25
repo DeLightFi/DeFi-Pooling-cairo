@@ -336,7 +336,7 @@ export type ApiResponse = {
 }
 
 export const fetchApiData = async (): Promise<ApiResponse> => {
-    const response = await fetch('http://localhost:3000/api/values');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/api/values`);
     if (!response.ok) {
         throw new Error('Network response was not ok');
     }
@@ -353,7 +353,7 @@ export type ApiCallDataResponse = {
 };
 
 export const fetchCalldata = async (proof_blocknumber: number): Promise<ApiCallDataResponse> => {
-    const response = await fetch(`http://localhost:3000/api/calldata?block=${proof_blocknumber}`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/api/calldata?block=${proof_blocknumber}`);
     if (!response.ok) {
         throw new Error('Network response was not ok');
     }
@@ -374,7 +374,7 @@ export type ApiPostResponse = {
 };
 
 export const fetchApiPostData = async (): Promise<ApiPostResponse> => {
-    const response = await fetch('http://localhost:3000/api/herodotus', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/api/herodotus`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
