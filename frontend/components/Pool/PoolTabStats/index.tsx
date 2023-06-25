@@ -62,6 +62,9 @@ const PoolTabStats = ({ connection, setConnection }) => {
             />
           </ComposedChart>
         </ResponsiveContainer>
+        <div className="chartlegend">
+          <span>Evolution of the pool APY through the time</span>
+        </div>
       </div>
       <div className="stats">
         <div className="figures">
