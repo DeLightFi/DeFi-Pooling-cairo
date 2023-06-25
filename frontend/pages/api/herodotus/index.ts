@@ -22,19 +22,15 @@ const post = async (req: NextApiRequest, res: NextApiResponse<any>) => {
 
     const proofYeanrBalance = await proofOfOwnershipL1PoolingBalance(pooling_address, mapping_storage_slot_yearn_balance)
     if (!proofYeanrBalance) return res.status(500).json([])
-    console.log(proofYeanrBalance)
     // Get Values
     const balanceProofResponse = await ethGetProof(yearn_vault_address, [proofYeanrBalance.slot], proof_blocknumber)
     const balancedProofValue = ethers.BigNumber.from(balanceProofResponse.storageProof[0].value).toString();
-    console.log(balancedProofValue)
 
     const receivedProofResponse = await ethGetProof(pooling_address, [mapping_storage_slot_pooling_received_eth.toString()], proof_blocknumber)
     const receivedProofValue = ethers.BigNumber.from(receivedProofResponse.storageProof[0].value).toString();
-    console.log(receivedProofValue)
 
     const bridgedProofResponse = await ethGetProof(pooling_address, [mapping_storage_slot_pooling_bridged_eth.toString()], proof_blocknumber)
     const bridgedProofValue = ethers.BigNumber.from(bridgedProofResponse.storageProof[0].value).toString();
-    console.log(bridgedProofValue)
 
     const callDataBalanceProof = await starknetVerify(pooling_address, proofYeanrBalance.slot, proof_blocknumber)
     const callDataReceivedProof = await starknetVerify(pooling_address, numberToStringWithLeadingZeros(mapping_storage_slot_pooling_received_eth), proof_blocknumber)
@@ -44,7 +40,7 @@ const post = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     const pooling_proof = await herodotusProof(pooling_address, proof_blocknumber)
 
     // console.log(yearn_proof)
-    console.log(pooling_proof)
+    // console.log(pooling_proof)
 
     return res.status(200).json({
         proof_blocknumber: proof_blocknumber,
@@ -73,8 +69,8 @@ const get = async (req: NextApiRequest, res: NextApiResponse<any>) => {
         taskId = ''; // or any default value you prefer
     }
 
-    console.log("quoting task status")
-    console.log(taskId)
+    // console.log("quoting task status")
+    // console.log(taskId)
 
     const result = await herodotusProofStatus(taskId)
     const status = result.taskStatus

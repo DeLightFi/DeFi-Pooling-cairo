@@ -34,12 +34,9 @@ const get = async (req: NextApiRequest, res: NextApiResponse<any>) => {
 
     const proofYeanrBalance = await proofOfOwnershipL1PoolingBalance(pooling_address, mapping_storage_slot_yearn_balance)
     if (!proofYeanrBalance) return res.status(500).json([])
-    console.log(proofYeanrBalance)
 
     const balanceProofResponse = await ethGetProof(yearn_vault_address, [proofYeanrBalance.slot], proof_blocknumber)
     const balancedProofValue = ethers.BigNumber.from(balanceProofResponse.storageProof[0].value).toString();
-    console.log(balancedProofValue)
-
     const callDataBalanceProof = await starknetVerify(pooling_address, proofYeanrBalance.slot, proof_blocknumber)
     const callDataReceivedProof = await starknetVerify(pooling_address, numberToStringWithLeadingZeros(mapping_storage_slot_pooling_received_eth), proof_blocknumber)
     const callDataBridgedProof = await starknetVerify(pooling_address, numberToStringWithLeadingZeros(mapping_storage_slot_pooling_bridged_eth), proof_blocknumber)

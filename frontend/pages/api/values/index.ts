@@ -17,20 +17,15 @@ const get = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     const proof_blocknumber = await getCurrentBlockNum()
     const proofYeanrBalance = await proofOfOwnershipL1PoolingBalance(pooling_address, mapping_storage_slot_yearn_balance)
     if (!proofYeanrBalance) return res.status(500).json([])
-    console.log(proofYeanrBalance)
     // Get Values
     const balanceProofResponse = await ethGetProof(yearn_vault_address, [proofYeanrBalance.slot], proof_blocknumber)
     const balancedProofValue = ethers.BigNumber.from(balanceProofResponse.storageProof[0].value).toString();
-    console.log(balancedProofValue)
 
     const receivedProofResponse = await ethGetProof(pooling_address, [mapping_storage_slot_pooling_received_eth.toString()], proof_blocknumber)
-    console.log(receivedProofResponse)
     const receivedProofValue = ethers.BigNumber.from(receivedProofResponse.storageProof[0].value).toString();
-    console.log(receivedProofValue)
 
     const bridgedProofResponse = await ethGetProof(pooling_address, [mapping_storage_slot_pooling_bridged_eth.toString()], proof_blocknumber)
     const bridgedProofValue = ethers.BigNumber.from(bridgedProofResponse.storageProof[0].value).toString();
-    console.log(bridgedProofValue)
 
     return res.status(200).json({
         proof_blocknumber: proof_blocknumber,

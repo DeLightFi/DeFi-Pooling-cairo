@@ -74,7 +74,6 @@ const PoolTabProof = ({ connection, setConnection }) => {
         l1_received: l1Received,
         l1_bridged: l1Bridged
       })
-      console.log(apiResponse)
 
       setL1Data({
         y_balance: parseFloat(apiResponse.balancedProofValue),
@@ -129,7 +128,6 @@ const PoolTabProof = ({ connection, setConnection }) => {
 
   async function handleSubmitProofHero() {
     const responsePostHerodotus = await fetchApiPostData()
-    console.log(responsePostHerodotus.proof_blocknumber)
     localStorage.setItem('proof_blocknumber', responsePostHerodotus.proof_blocknumber.toString());
     setProofBlockNumber(responsePostHerodotus.proof_blocknumber)
   }

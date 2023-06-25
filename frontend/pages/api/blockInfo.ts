@@ -188,7 +188,6 @@ export const herodotusProofStatus = async (taskId: string) => {
         method: "GET",
     });
     const data = await response.json();
-    console.log(data)
     return data;
 }
 
@@ -211,7 +210,6 @@ export const starknetVerify = async (address: string, slot: string, blockNum: nu
     const slot_from_hex = Data.fromHex(slot)
         .toInts()
         .values.map((value: any) => value.toHexString())
-    console.log(slot_from_hex)
 
     const output = {
         slot: slot_from_hex, proof_sizes_bytes: flatProofByteLengths.map((length) => "0x" + length.toString(16)), proof_sizes_words: flatProofWordLengths.map((length) => "0x" + length.toString(16)), proofs_concat: flatProofValues.map((value) => value.toHexString()),
