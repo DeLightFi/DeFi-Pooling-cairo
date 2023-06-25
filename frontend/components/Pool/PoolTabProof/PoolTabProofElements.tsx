@@ -49,15 +49,95 @@ export const Container = styled.div`
     }
   }
 
-  .chart{
-    height: 55%;
+  .equilibrate{
+    height: 20%;
     width: 100%;
 
-    padding-bottom: 1%;
-    border-bottom: 1px solid #dadada30;
+    display: flex;
+    flex-direction: row;
+    gap: 2%;
+
+    .repartition{
+      width: 50%;
+      padding: 0 2%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2%;
+
+      >span{
+          font-size: 1vw;
+          color: #dadada60;
+      }
+
+      >div{
+        width: 100%;
+        height: 10px;
+
+        position: relative;
+
+        div:nth-child(1){
+          position: absolute;
+          top: 0;
+          left: 0;
+
+          width: 100%;
+          height: 10px;
+
+          background-color: #dadada30;
+          border-radius: 10px;
+        }
+
+        div:nth-child(2){
+          position: absolute;
+          top: 0;
+          left: 0;
+
+          height: 10px;
+
+          background-color: #e6e452;
+          border-radius: 10px;
+        }
+      }
+
+      .value{
+        color: #e6e452;
+        font-size: 1.4vw;
+        width: 20%;
+        text-align: center;
+      }
+    }
+
+    .btn{
+      width: 50%;
+      padding: 0 2%;
+      display: flex;
+      flex-direction: column;
+      justify-content: left;
+      gap: 4%;
+
+      >button{
+        height: 3.5vw;
+        width: 40%;
+        border-radius: 60px;
+        border: none;
+        outline: none;
+        color: #fff;
+        background-color: #000;
+
+        font-family: inherit;
+        font-size: 1.2vw;
+
+        cursor: pointer;
+
+        &:hover{
+          background-color: #25262d;
+        }
+      }
+    }
   }
 
-  .stats{
+  .proof{
     height: 35%;
     width: 100%;
 
@@ -106,47 +186,30 @@ export const Container = styled.div`
       }
     }
 
-    .repartition{
+    .btn{
       width: 50%;
       padding: 0 2%;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      gap: 2%;
+      justify-content: left;
+      gap: 4%;
 
-      >span{
-          font-size: 1vw;
-          color: #dadada60;
-      }
+      >button{
+        height: 3.5vw;
+        width: 40%;
+        border-radius: 60px;
+        border: none;
+        outline: none;
+        color: #fff;
+        background-color: #000;
 
-      >div{
-        width: 100%;
-        height: 10px;
+        font-family: inherit;
+        font-size: 1.2vw;
 
-        position: relative;
+        cursor: pointer;
 
-        div:nth-child(1){
-          position: absolute;
-          top: 0;
-          left: 0;
-
-          width: 100%;
-          height: 10px;
-
-          background-color: #dadada30;
-          border-radius: 10px;
-        }
-
-        div:nth-child(2){
-          position: absolute;
-          top: 0;
-          left: 0;
-
-          width: 12.3%;
-          height: 10px;
-
-          background-color: #e6e452;
-          border-radius: 10px;
+        &:hover{
+          background-color: #25262d;
         }
       }
     }
