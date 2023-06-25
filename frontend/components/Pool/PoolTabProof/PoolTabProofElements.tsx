@@ -66,7 +66,7 @@ export const Container = styled.div`
     gap: 2%;
 
     .repartition{
-      width: 50%;
+      width: 100%;
       padding: 0 2%;
       display: flex;
       flex-direction: column;

@@ -214,3 +214,18 @@ export function shortenAddress(address: string, chars = 4): string {
     }
     return `${parsed.substring(0, chars + 2)}...${parsed.substring(63 - chars)}`
 }
+
+export async function fetchL2Allocation(): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'l2_reserve',
+        calldata: []
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        return (parseFloat(number.toFelt(data.result[0])) / 1000000000000000000)
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
