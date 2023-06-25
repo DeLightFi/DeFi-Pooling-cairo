@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaLayerGroup } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaLayerGroup } from "react-icons/fa";
 import moment from "moment";
 import {
   ComposedChart,
@@ -11,102 +11,14 @@ import {
 
 import { Container } from "./PoolTabStatsElements";
 import CustomTooltip from "./ChartCustomTooltip";
+
 import { fetchL1Allocation, fetchL1L2Allocation, fetchL2Allocation, fetchL2L1Allocation, fetchlastDataProverAddress, fetchlastL1BridgerAddress, fetchlastL2BridgerAddress, fetchTotalRewards, fetchTvl, formatNumber, shortenAddress } from "../../../utils";
-import styled from "styled-components";
+
 
 interface IUserReward {
   user_address: string;
   pendingRewards: number;
 }
-
-
-const RowData = styled.div`
-width: 70%;
-  display: flex;
-  flex-direction: row; 
-  gap: 6px;
-  align-items: center;
-  justify-content: space-between;
-`
-
-const TVLData = styled.div`
-  display: flex;
-  flex-direction: column;
-   
-  gap: 5px;
-  justify-content: space-between;
-`
-
-const Flexrow = styled.div`
-  display: flex;
-  flex-direction: row;
-  gap: 5px;
-  align-items: center;
-`
-
-const FlexCol = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`
-
-
-
-
-const RewardsSpace = styled.div`
-  display: flex;
-  flex-direction: column; 
-  gap: 20px;
-`
-
-const RewardsData = styled.div`
-  display: flex;
-  flex-direction: column; 
-  gap: 3px;
-  justify-content: space-evenly;
-`
-
-const RewardBox = styled.div`
-  display: flex;
-  flex-direction: row; 
-  justify-content: space-between;
-  gap: 30px;
-  align-items: left;
-
-`
-const AddressText = styled.div`
-  font-weight: light;
-  color: #f5f5f58b;
-  font-size: small;
-`
-
-
-const PendingRewardsText = styled.div`
-  font-weight: bold;
-  color: #ffffff;
-  font-size: medium;
-`
-
-const HugeText = styled.div`
- font-size: 2vw;
-          line-height: 1;
-          font-weight: 500;
-          color: #e6e452;
-`
-
-
-
-const LightText = styled.div`
-  font-weight: light;
-  color: #f5f5f58b;
-  font-size: small;
-`
-
-const BigText = styled.div`
-  font-weight: bold;
-  color: #ffffff;
-  font-size: medium;
-`
 
 
 const PoolTabStats = ({ connection, setConnection }) => {
@@ -257,131 +169,73 @@ const PoolTabStats = ({ connection, setConnection }) => {
         </div>
       </div>
       <div className="stats">
-        <RowData>
-          <RewardsSpace>
-
-            <TVLData>
-              <BigText>
-                Mirror TVL
-              </BigText>
-              <HugeText>
-                {formatNumber(tvl)}
-              </HugeText>
-
-            </TVLData>
-            <Flexrow>
-              <FlexCol>
-                <LightText>
-                  L2 Reserve
-                </LightText>
-                <BigText>
-                  {l2Alloc.toPrecision(2)}
-                </BigText>
-              </FlexCol>
-              <FlexCol>
-                <LightText>
-                L2 -> l1
-                </LightText>
-                <BigText>
-                  {l2l1Alloc.toPrecision(2)}
-                </BigText>
-              </FlexCol>
-              <FlexCol>
-                <LightText>
-                  L1 Reserve
-                </LightText>
-                <BigText>
-                  {l1Alloc.toPrecision(2)}
-                </BigText>
-              </FlexCol>
-              <FlexCol>
-                <LightText>
-              L1 -> l2
-                </LightText>
-                <BigText>
-                  {l1l2Alloc.toPrecision(2)}
-                </BigText>
-              </FlexCol>
-            </Flexrow>
-          </RewardsSpace>
-          <RewardsSpace>
-            <BigText>
-              Protocol Participants
-            </BigText>
-            {
-              dataProviderRewards && l1BridgerRewards && l2BridgerRewards &&
-              <RewardsData>
-                <RewardBox>
-                  <AddressText>
-                    Participant
-                  </AddressText>
-                  <AddressText>
-                    Address
-                  </AddressText>
-                  <AddressText>
-                    Rewards
-                  </AddressText>
-                </RewardBox>
-
-
-                <RewardBox>
-                  <AddressText>
-                    Data Provider
-                  </AddressText>
-                  <AddressText>
+        <div className="figures">
+          <div className="tvl">
+            <span>Mirror TVL</span>
+            <span>{formatNumber(tvl)}</span>
+          </div>
+          <div className="reserves">
+            <div>
+              <span>{l2Alloc.toPrecision(2)}</span>
+              <span>L2 Reserve</span>
+            </div>
+            <div>
+              <span>{l2l1Alloc.toPrecision(2)}</span>
+              <span>L2 <FaArrowRight /> L1</span>
+            </div>
+            <div>
+              <span>{l1Alloc.toPrecision(2)}</span>
+              <span>L1 Reserve</span>
+            </div>
+            <div>
+              <span>{l1l2Alloc.toPrecision(2)}</span>
+              <span>L1 <FaArrowRight /> L2</span>
+            </div>
+          </div>
+          <div className="rewards">
+            <span>Protocol Participants Rewards</span>
+            {dataProviderRewards && l1BridgerRewards && l2BridgerRewards &&
+              <div>
+                <div>
+                  <span>Data Provider</span>
+                  <span>
                     {
                       dataProviderRewards.user_address == "0x0" ?
                         "0"
                         :
                         shortenAddress(dataProviderRewards.user_address)
                     }
-                  </AddressText>
-                  <PendingRewardsText>
-                    {
-                      (dataProviderRewards.pendingRewards.toPrecision(2))
-                    }
-                  </PendingRewardsText>
-                </RewardBox>
-                <RewardBox>
-                  <AddressText>
-                    L1 Bridger
-                  </AddressText>
-                  <AddressText>
+                  </span>
+                  <span>{dataProviderRewards.pendingRewards}</span>
+                </div>
+                <div>
+                  <span>L1 Bridger</span>
+                  <span>
                     {
                       l1BridgerRewards.user_address == "0x0" ?
                         "0"
                         :
                         shortenAddress(l1BridgerRewards.user_address)
                     }
-                  </AddressText>
-                  <PendingRewardsText>
-                    {
-                      (l1BridgerRewards.pendingRewards.toPrecision(2))
-                    }
-                  </PendingRewardsText>
-                </RewardBox>
-                <RewardBox>
-                  <AddressText>
-                    L2 Bridger
-                  </AddressText>
-                  <AddressText>
+                  </span>
+                  <span>{l1BridgerRewards.pendingRewards}</span>
+                </div>
+                <div>
+                  <span>L2 Bridger</span>
+                  <span>
                     {
                       l2BridgerRewards.user_address == "0x0" ?
                         "0"
                         :
                         shortenAddress(l2BridgerRewards.user_address)
                     }
-                  </AddressText>
-                  <PendingRewardsText>
-                    {
-                      (l2BridgerRewards.pendingRewards.toPrecision(2))
-                    }
-                  </PendingRewardsText>
-                </RewardBox>
-              </RewardsData>
+                  </span>
+                  <span>{l2BridgerRewards.pendingRewards.toPrecision(2)}</span>
+                </div>
+              </div>
             }
-          </RewardsSpace>
-        </RowData>
+          </div>
+        </div>
         <div className="repartition">
           <span>L1 allocation</span>
           <div>

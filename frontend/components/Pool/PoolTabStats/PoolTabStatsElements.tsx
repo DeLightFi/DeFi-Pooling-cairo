@@ -119,36 +119,81 @@ export const Container = styled.div`
       flex-direction: column;
       justify-content: space-evenly;
 
-      >div{
+      .tvl{
+        display: flex;
+        flex-direction: row;
+        align-items: flex-end;
+        gap: 1.5%;
+
+        span:nth-child(1){
+          font-size: 1.2vw;
+          color: #dadada;
+        }
+
+        span:nth-child(2){
+          font-size: 1.8vw;
+          line-height: 1.5vw;
+          color: #e6e452;
+        }
+      }
+
+      .reserves{
+        display: flex;
+        flex-direction: row;
+
+        div{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 25%;
+
+          span:nth-child(1){
+            font-size: 1vw;
+            color: #e6e452;
+          }
+
+          span:nth-child(2){
+            font-size: 0.8vw;
+            line-height: 1vw;
+            color: #dadada60;
+          }
+        }
+      }
+
+      .rewards{
         display: flex;
         flex-direction: column;
 
-        span{
-          font-size: 1.2vw;
-          color: #dadada30;;
-          padding-bottom: 1%;
+        >span{
+          font-size: 1vw;
+          color: #dadada60;
         }
 
         >div{
           display: flex;
-          flex-direction: row;
-          justify-content: space-between;
+          flex-direction: column;
 
           >div{
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
 
             span:nth-child(1){
-              font-size: 1vw;
-              color: #dadada60;
+              width: 20%;
+              text-align: left;
             }
 
             span:nth-child(2){
-              font-size: 1.5vw;
-              font-weight: 600;
-              color: #fff;
+              width: 40%;
+              text-align: right;
             }
 
+            span:nth-child(3){
+              width: 40%;
+              text-align: right;
+            }
           }
         }
       }
