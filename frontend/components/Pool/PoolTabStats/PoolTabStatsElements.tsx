@@ -181,17 +181,20 @@ export const Container = styled.div`
             justify-content: space-between;
 
             span:nth-child(1){
-              width: 20%;
+              font-size: 1vw;
+              width: 30%;
               text-align: left;
             }
 
             span:nth-child(2){
-              width: 40%;
+              font-size: 1vw;
+              width: 35%;
               text-align: right;
             }
 
             span:nth-child(3){
-              width: 40%;
+              font-size: 1vw;
+              width: 35%;
               text-align: right;
             }
           }
@@ -251,6 +254,7 @@ export const Container = styled.div`
 
       .infos{
         font-size: 0.8vw;
+        text-align: justify;
       }
     }
   }

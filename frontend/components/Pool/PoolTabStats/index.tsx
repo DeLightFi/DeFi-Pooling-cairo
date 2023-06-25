@@ -244,7 +244,7 @@ const PoolTabStats = ({ connection, setConnection }) => {
           </div>
           <span className="value" style={{ marginLeft: `calc(${l1Allocation}% - 10%)` }}>{`${l1Allocation.toPrecision(2)}%`}</span>
           <br />
-          <span className="infos">The mirror Vault apy is equal to the L1Allocation multiplied by the APY of the L1 underlying strategies.
+          <span className="infos">The mirror Vault apy is equal to the L1 Allocation multiplied by the APY of the L1 underlying strategies.
             In order to equilibrate this value, you have the possibility to bridge funds using the <FaLayerGroup /> tab.</span>
         </div>
       </div>
