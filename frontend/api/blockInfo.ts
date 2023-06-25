@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers'
-import { Data } from "../../utils/data"
+import { Data } from "../utils/data"
 
 
 export const getTxsInBlockInterval = async (fromBlock: number, toBlock: number, contractAddress: string, walletAddress: string) => {
