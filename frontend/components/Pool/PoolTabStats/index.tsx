@@ -144,7 +144,15 @@ const PoolTabStats = ({ connection, setConnection }) => {
     fetch("https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum", {
       "body": "{\"query\":\"{\\n\\t\\t\\tvaultDailySnapshots(\\n\\t\\t\\t\\twhere: {vault: \\\"0xa258c4606ca8206d8aa700ce2143d7db854d168c\\\"}\\n\\t\\t\\t\\torderBy: timestamp\\n\\t\\t\\t\\torderDirection: asc\\n\\t\\t\\t\\tfirst: 1000\\n\\t\\t\\t) {\\n\\t\\t\\t\\tpricePerShare\\n\\t\\t\\t\\ttotalValueLockedUSD\\n\\t\\t\\t\\ttimestamp\\n\\t\\t\\t}\\n\\t\\t}\"}",
       "method": "POST"
-    }).then(response => response.json()).then(data => setData(data.data.vaultDailySnapshots));
+    }).then(response => response.json()).then(data => {
+      console.log(data.data.vaultDailySnapshots)
+      const apy = data.data.vaultDailySnapshots.map((obj, index) => ({
+        timestamp: obj.timestamp,
+        apy: (+obj.pricePerShare - (+data.data.vaultDailySnapshots[index - 1]?.pricePerShare || 0)) / 10e18 * 365 * 100,
+      }));
+      setData(apy.slice(1, apy.length - 1))
+    }
+    );
 
     const fetchData = async () => {
       const [a, b, c, d, tvl] = await Promise.all([
@@ -208,7 +216,11 @@ const PoolTabStats = ({ connection, setConnection }) => {
         <div className="apy">
           <div>
             <span>APY</span>
-            <span>0.00%</span>
+            {data.length >= 1 ?
+              <span>{(+data[data.length - 1].apy).toFixed(2)}%</span>
+              :
+              <span>0.00%</span>
+            }
           </div>
         </div>
         <ResponsiveContainer className="rechart">
@@ -223,7 +235,7 @@ const PoolTabStats = ({ connection, setConnection }) => {
             />
             <Area
               type="monotone"
-              dataKey="totalValueLockedUSD"
+              dataKey="apy"
               stackId="1"
               stroke="#e6e452"
               strokeWidth={1}
@@ -318,7 +330,6 @@ const PoolTabStats = ({ connection, setConnection }) => {
                         "0"
                         :
                         shortenAddress(dataProviderRewards.user_address)
-
                     }
                   </AddressText>
                   <PendingRewardsText>
@@ -327,7 +338,6 @@ const PoolTabStats = ({ connection, setConnection }) => {
                     }
                   </PendingRewardsText>
                 </RewardBox>
-
                 <RewardBox>
                   <AddressText>
                     L1 Bridger
@@ -346,7 +356,6 @@ const PoolTabStats = ({ connection, setConnection }) => {
                     }
                   </PendingRewardsText>
                 </RewardBox>
-
                 <RewardBox>
                   <AddressText>
                     L2 Bridger
@@ -365,14 +374,10 @@ const PoolTabStats = ({ connection, setConnection }) => {
                     }
                   </PendingRewardsText>
                 </RewardBox>
-
-
               </RewardsData>
             }
-
           </RewardsSpace>
         </RowData>
-
         <div className="repartition">
           <span>L1 allocation</span>
           <div>

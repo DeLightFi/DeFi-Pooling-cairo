@@ -12,7 +12,7 @@ const CustomTooltip = ({ payload }) => {
     return (
       <Container>
         <span>{moment(new Date(+`${selected_data.timestamp}000`)).format("DD MMMM YYYY h:mm")}</span>
-        <span>{(+selected_data.totalValueLockedUSD).toFixed(2)}</span>
+        <span>{(+selected_data.apy).toFixed(2)}</span>
       </Container>
     );
   }
