@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
+import { Call } from "starknet";
 import styled from "styled-components";
-import { BOOSTED_ETH, ETH, fetchEthBalance, fetchEthBoostedBalance, fetchShareRatio, formatNumber, getCgTokenPrice } from "../../../utils";
-import LogoNameEth from "./LogoNameEth";
 import { BiArrowFromTop } from 'react-icons/bi'
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
+import { connect, ConnectedStarknetWindowObject } from '@argent/get-starknet'
+
 
 import { Container } from "./PoolTradeElements";
-import { connect, ConnectedStarknetWindowObject } from '@argent/get-starknet'
+
+import { BOOSTED_ETH, ETH, fetchEthBalance, fetchEthBoostedBalance, fetchShareRatio, formatNumber, getCgTokenPrice } from "../../../utils";
 import LogoNameEthBoost from "./LogoNameEthBoost";
-import { Call } from "starknet";
+import LogoNameEth from "./LogoNameEth";
+
 
 const UnderlyingList = styled.div`
   display: flex;
@@ -18,7 +21,6 @@ const UnderlyingList = styled.div`
   width: 100%;
 `
 
-
 const UnderlyingBox = styled.div`
   display: flex;
   flex-direction: column;
@@ -27,7 +29,6 @@ const UnderlyingBox = styled.div`
   padding: 10px;
   background-color: #000000;
   border-radius: 10px;
-
 `
 
 const UnderlyingRow = styled.div`
@@ -47,7 +48,6 @@ const StyledOutput = styled.div`
   text-align: right;
   white-space: nowrap;
 `
-
 
 const StyledInput = styled.input`
   max-width: 40%;
