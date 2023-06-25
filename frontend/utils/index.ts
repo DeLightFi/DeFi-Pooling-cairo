@@ -3,6 +3,10 @@ import { Call, number, Provider, validateAndParseAddress } from "starknet"
 
 export const ETH = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 export const BOOSTED_ETH = "0x074cdd6e9db755ac36d136bb8b4087d94eae0cf8df2d61bf8a77d8abc6e67996"
+export const FACT_REGISTERY = "0x07c88f02f0757b25547af4d946445f92dbe3416116d46d7b2bd88bcfad65a06f"
+export const L1_POOLING = "395905421631041716726486615856866174406126999155"
+
+
 export function formatNumber(num: number) {
     if (Math.abs(num) >= 1.0e9) {
         // Billions
@@ -225,6 +229,136 @@ export async function fetchL2Allocation(): Promise<number> {
     try {
         const data = await provider?.callContract(calldata)
         return (parseFloat(number.toFelt(data.result[0])) / 1000000000000000000)
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+export async function fetchL1Received(): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'l1_received_underying',
+        calldata: []
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        return (parseFloat(number.toFelt(data.result[0])) / 1000000000000000000)
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+export async function fetchL1Bridged(): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'l1_bridged_underying',
+        calldata: []
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        return (parseFloat(number.toFelt(data.result[0])) / 1000000000000000000)
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+
+export async function fetchL1Balance(): Promise<number> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: BOOSTED_ETH,
+        entrypoint: 'yearn_token_balance',
+        calldata: []
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        return (parseFloat(number.toFelt(data.result[0])) / 1000000000000000000)
+    } catch (e) {
+        throw new Error((e as unknown as string) || 'Unknown error occurred')
+    }
+}
+
+export type ApiResponse = {
+    proof_blocknumber: number,
+    balancedProofValue: string,
+    receivedProofValue: string,
+    bridgedProofValue: string,
+}
+
+export const fetchApiData = async (): Promise<ApiResponse> => {
+    const response = await fetch('http://localhost:3000/api/values');
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    const data: ApiResponse = await response.json();
+    return data;
+}
+
+
+export type ApiCallDataResponse = {
+    yearnBalance: any,
+    callDataBalanceProof: any,
+    callDataReceivedProof: any,
+    callDataBridgedProof: any
+};
+
+export const fetchCalldata = async (proof_blocknumber: number): Promise<ApiCallDataResponse> => {
+    const response = await fetch(`http://localhost:3000/api/calldata?block=${proof_blocknumber}`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    const data: ApiCallDataResponse = await response.json();
+    return data;
+}
+
+
+export type ApiPostResponse = {
+    proof_blocknumber: number,
+    balancedProofValue: string,
+    receivedProofValue: string,
+    bridgedProofValue: string,
+    callDataBalanceProof: any,
+    callDataReceivedProof: any,
+    callDataBridgedProof: any,
+    pooling_proof: any,
+};
+
+export const fetchApiPostData = async (): Promise<ApiPostResponse> => {
+    const response = await fetch('http://localhost:3000/api/herodotus', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+
+    const data: ApiPostResponse = await response.json();
+    return data;
+};
+
+
+
+
+
+export async function fetchTaskStatusHerodotus(block_number: number): Promise<boolean> {
+    const provider = provider_testnet
+    const calldata: Call = {
+        contractAddress: FACT_REGISTERY,
+        entrypoint: 'get_verified_account_storage_hash',
+        calldata: [L1_POOLING, block_number.toString()]
+    }
+    try {
+        const data = await provider?.callContract(calldata)
+        if (parseFloat(number.toFelt(data.result[0])) == 0) {
+            return (false)
+        } else {
+            return (true)
+        }
     } catch (e) {
         throw new Error((e as unknown as string) || 'Unknown error occurred')
     }
