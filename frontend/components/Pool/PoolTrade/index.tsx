@@ -234,7 +234,7 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
     }
 
     if (!connection) {
-      setErrorMessageDeposit("Connect Wallet Fist")
+      setErrorMessageDeposit("Connect Wallet First")
       return
     }
 
@@ -272,7 +272,7 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
 
 
     if (!connection) {
-      setErrorMessageRedeem("Connect Wallet Fist")
+      setErrorMessageRedeem("Connect Wallet First")
       return
     }
 

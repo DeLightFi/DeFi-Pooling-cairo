@@ -94,7 +94,7 @@ const PoolTabProof = ({ connection, setConnection }) => {
     setTryL2Bridge(true)
 
     if (!connection) {
-      setErrorMessageL2Bridge("Connect Wallet Fist")
+      setErrorMessageL2Bridge("Connect Wallet First")
       return
     }
 
@@ -137,7 +137,7 @@ const PoolTabProof = ({ connection, setConnection }) => {
 
     setTryTriggerProof(true)
     if (!connection) {
-      setErrorProove("Connect Wallet Fist")
+      setErrorProove("Connect Wallet First")
       return
     }
 
@@ -202,7 +202,7 @@ const PoolTabProof = ({ connection, setConnection }) => {
     }
 
     if (!connection) {
-      setErrorMessageL1Bridge("Connect Wallet Fist")
+      setErrorMessageL1Bridge("Connect Wallet First")
       return
     }
 
