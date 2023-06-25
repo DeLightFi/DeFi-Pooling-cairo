@@ -20,11 +20,11 @@ By splitting the received capital into L2 and L1 and maintening an ideal allocat
 
 Yield bearing tokens are issued when depositing, their price is can be obtained by dividing the total underlying holdings by the total supply. 
 
-Total holdings = L2 underlying + L1 total yield tokens in underlying + Token waiting in the bridge ( - stream to participants )
+Total holdings = L2 underlying + L1 total yield tokens in underlying (provided by Pragma) + Token waiting in the bridge ( - stream to participants )
 
 While it is easy to obtain the l2 underlying balance, it can be harder to track L1 holdings. FIrst let's see the liquidity flow below
 
-![Image 1](public/liqFlow.png)
+![Image 1](./public/liqFlow.png)
 
 The Liquidity once bridge from L1 is invested in the yield startegies:
 - step 2 : total holdings = 0,5 + 4,5 
@@ -62,29 +62,42 @@ Maintening an ideal L2 reserve can be very efficient in terms of gas because you
 
 # Developer
 
-![Image 2](url-to-your-image2)
+![Image 2](./public/protocol.png)
 
 Deployed Contracts: 
-- https://goerli.etherscan.io/tx/0x6ebc4ee6228532dd691d3df99839d28eef331a9163ce3cf2b5e1e21e07bcf908
-- https://goerli.etherscan.io/tx/0x6ebc4ee6228532dd691d3df99839d28eef331a9163ce3cf2b5e1e21e07bcf908
+- https://testnet.starkscan.co/contract/0x0497b9cbcfc36c2b2f58b5af75e69381d31b8f47e981802293b9f1520bbc2360
+- https://goerli.etherscan.io/tx/0xb273c84Af2C533934b5eBcaCE450427c30059dB6
 
 
-
-
-#### L2 contracts
+## L2 contracts
 
 The vault is using 4626 standard (the one realised by eni), supports cairo 0 tokens as underlying (so you can try it with eth goerli), interact with StarkGate, Herodotus Proof Registery, Pragma (yield balance to underlying) and Starknet Core for l1-l2 messaging. The contract is sending yield bearing token money streal to protocol participants for bridging and prooving l1 data. In this implementation 0.1% of tvl is sent every year, 70% for data provers and 30% for bridgers.  The l1-L2 messaging allow us to put all the callable functions on L2 so everything is managed from this contract to improve the participants UX .
 
 Setup protostar https://docs.swmansion.com/protostar/docs/cairo-1/installation
 
-Compile: head to contracts/l2contract and 'protostar build'
+Compile: head to contracts/l2contract and 
+``` 
+protostar build
+``` 
 
-Declare: python3 contracts/l2contract/script/declare.py
-Deploy: python3 contracts/l2contract/script/deploy.py
-bridgeFromL2: python3 contracts/l2contract/script/bridgeFromL2.py
+Declare: 
+``` 
+python3 contracts/l2contract/script/declare.py
+``` 
+
+Deploy:
+``` 
+python3 contracts/l2contract/script/deploy.py
+``` 
+
+bridgeFromL2:
+``` 
+python3 contracts/l2contract/script/bridgeFromL2.py
+``` 
 
 
-#### L1 contracts
+
+## L1 contracts
 
 yearn.vy: yearn v2 mock (the only yield).
 L1Pooling.sol: Can consume message for:
@@ -94,27 +107,87 @@ L1Pooling.sol: Can consume message for:
 install hardhat 
 https://hardhat.org/hardhat-runner/docs/getting-started#quick-start
 
-Compile: npx hardhat compile
-Deploy yearn vault mock : npx hardhat run deployVault
-Deploy l1pooling : npx hardhat run deployPooling
-handle receive from l2: handleConsumeReceive
-handle bridge to l2: handleWithdraw
 
-# Proof
+Compile: 
 
-Get value, L2 calldata and task id from herodotus (to prove l1 states for current block)
+``` 
+npx hardhat compile
+``` 
 
+Deploy yearn vault mock : 
+``` 
+npx hardhat run deployVault
+``` 
+Deploy l1pooling :
+``` 
+npx hardhat run deployPooling
+``` 
+
+handle receive from l2: 
+``` 
+npx hardhat run handleConsumeReceive
+``` 
+
+handle bridge to l2: 
+``` 
+npx hardhat run handleConsumeWithdraw
+``` 
+## API for Proof generation
+
+Ask Herodotus to proove L1 states for current block on Starknet, response give us values, L2 calldata and task id from herodotus 
+
+``` 
 curl -X POST http://localhost:3000/api/herodotus 
+```
 
-Get Task status
+Get Task status:
+``` 
+curl -X GET "http://localhost:3000/api/herodotus?taskId=<53aafb2f-6901-40fd-a47e-add76f204683>" 
+```
 
-curl -X GET "http://localhost:3000/api/herodotus?taskId=<53aafb2f-6901-40fd-a47e-add76f204683>"
 replace with the desired taskId
 
+Get calldata:
+``` 
+curl -X GET "http://localhost:3000/api/values"
+``` 
 
-#### Proof 
+Get  values:
+``` 
+curl -X GET "http://localhost:3000/api/values?block=<2333>"
+``` 
 
-Access l1 contracts and scripts
-The current version only integrates yearn as l1 strategy. 
+replace with the desired block
 
-https://goerli.etherscan.io/tx/0x6ebc4ee6228532dd691d3df99839d28eef331a9163ce3cf2b5e1e21e07bcf908
+## App
+
+Add the app URL in the .env
+
+head to the frontend repository and install dependencies
+``` 
+yarn
+``` 
+
+``` 
+yarn dev
+``` 
+
+
+# Frontend
+
+
+Head to : 
+https://defi-pooling-cairo.vercel.app/
+
+The right box allow you to deposit Goerli ETH and redeem Mirror-Goerli ETH
+
+The box in the analytic tab displays analytics regarding: 
+- Copied strategy APR
+- TVL and liquidiy allocation between the different contracts
+- Current protocol participants address and pending rewards
+- L1 liquidity 
+
+The box in the proof tab allow you to participate to the protocol: 
+- Bridge liquidity from L2 when l2 allocation is above 15% (with current parameters) and earn yield bearing token money stream
+- Bridge liquidity to L2 when l2 allocation is below 5% (with current parameters)  and earn yield bearing token money stream
+- Proove new L1 state if possible. First, if L1 state differs from L2, you can ask herodotus to send the proof to L2. Come back later and when the proof is available on L2, you can trigger the update and earn yield bearing token money stream
