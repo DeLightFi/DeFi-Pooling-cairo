@@ -23,6 +23,10 @@ const PoolTabAbout = ({ }) => {
           <img src="https://www.pragmaoracle.com/assets/ecosystem/argent.png" alt="argent" />
           <span>Offering web wallet solution for developpers.</span>
         </div>
+        <div>
+          <img src="https://altcoinsbox.com/wp-content/uploads/2023/03/full-yearn-finance-logo.png" alt="yearn" />
+          <span>Trading the best vaults.</span>
+        </div>
       </div>
     </Container>
   );

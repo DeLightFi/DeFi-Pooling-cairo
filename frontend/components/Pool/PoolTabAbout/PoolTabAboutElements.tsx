@@ -28,7 +28,7 @@ export const Container = styled.div`
     justify-content: space-between;
 
     >div{
-      width: 30%;
+      width: 24%;
       height: 100%;
       display: flex;
       flex-direction: column;
