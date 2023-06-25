@@ -11,15 +11,135 @@ import {
 
 import { Container } from "./PoolTabStatsElements";
 import CustomTooltip from "./ChartCustomTooltip";
+import { fetchlastDataProverAddress, fetchlastL1BridgerAddress, fetchlastL2BridgerAddress, fetchTotalRewards, fetchTvl, formatNumber, shortenAddress } from "../../../utils";
+import styled from "styled-components";
+
+interface IUserReward {
+  user_address: string;
+  pendingRewards: number;
+}
+
+
+const RowData = styled.div`
+width: 40%;
+  display: flex;
+  flex-direction: row; 
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+`
+
+const TVLData = styled.div`
+  display: flex;
+  flex-direction: column;
+   
+  gap: 5px;
+  justify-content: space-between;
+`
+
+const RewardsSpace = styled.div`
+  display: flex;
+  flex-direction: column; 
+  gap: 3px;
+`
+
+const RewardsData = styled.div`
+  display: flex;
+  flex-direction: column; 
+  gap: 3px;
+  justify-content: space-evenly;
+`
+
+const RewardBox = styled.div`
+  display: flex;
+  flex-direction: row; 
+  justify-content: space-between;
+`
+const AddressText = styled.div`
+  font-weight: light;
+  color: #f5f5f58b;
+  font-size: small;
+`
+
+
+const PendingRewardsText = styled.div`
+  font-weight: bold;
+  color: #ffffff;
+  font-size: medium;
+`
+
+const HugeText = styled.div`
+ font-size: 2vw;
+          line-height: 1;
+          font-weight: 500;
+          color: #e6e452;
+`
+
+
+
+const LightText = styled.div`
+  font-weight: light;
+  color: #f5f5f58b;
+  font-size: small;
+`
+
+const BigText = styled.div`
+  font-weight: bold;
+  color: #ffffff;
+  font-size: medium;
+`
 
 
 const PoolTabStats = ({ connection, setConnection }) => {
+
+
   const [data, setData] = useState([]);
+  const [dataProviderRewards, setDataProviderRewards] = useState<IUserReward>();
+  const [l1BridgerRewards, setL1BridgerRewards] = useState<IUserReward>();
+  const [l2BridgerRewards, setL2BridgerRewards] = useState<IUserReward>();
+
+  const [tvl, setTvl] = useState<number>(0)
+
   useEffect(() => {
     fetch("https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum", {
       "body": "{\"query\":\"{\\n\\t\\t\\tvaultDailySnapshots(\\n\\t\\t\\t\\twhere: {vault: \\\"0xa258c4606ca8206d8aa700ce2143d7db854d168c\\\"}\\n\\t\\t\\t\\torderBy: timestamp\\n\\t\\t\\t\\torderDirection: asc\\n\\t\\t\\t\\tfirst: 1000\\n\\t\\t\\t) {\\n\\t\\t\\t\\tpricePerShare\\n\\t\\t\\t\\ttotalValueLockedUSD\\n\\t\\t\\t\\ttimestamp\\n\\t\\t\\t}\\n\\t\\t}\"}",
       "method": "POST"
     }).then(response => response.json()).then(data => setData(data.data.vaultDailySnapshots));
+
+
+    const fetchData = async () => {
+      const [a, b, c, d, tvl] = await Promise.all([
+        fetchTotalRewards(),
+        fetchlastDataProverAddress(),
+        fetchlastL1BridgerAddress(),
+        fetchlastL2BridgerAddress(),
+        fetchTvl()
+      ]);
+
+      const data_prov: IUserReward = {
+        user_address: b,
+        pendingRewards: a.data_prover,
+      }
+
+      const l1B: IUserReward = {
+        user_address: c,
+        pendingRewards: a.l1_bridger_reward,
+      }
+
+      const l2B: IUserReward = {
+        user_address: d,
+        pendingRewards: a.l2_bridger_reward,
+      }
+
+      setDataProviderRewards(l1B)
+      setL1BridgerRewards(data_prov)
+      setL2BridgerRewards(l2B)
+      setTvl(tvl)
+
+    };
+
+    fetchData();
+
   }, []);
 
 
@@ -67,42 +187,83 @@ const PoolTabStats = ({ connection, setConnection }) => {
         </div>
       </div>
       <div className="stats">
-        <div className="figures">
-          <div>
-            <span>Layer 1 (ETH)</span>
-            <div>
-              <div>
-                <span>Received ETH L1</span>
-                <span>0.00</span>
-              </div>
-              <div>
-                <span>Sent From L1</span>
-                <span>0.00</span>
-              </div>
-              <div>
-                <span>Vault Balance L1</span>
-                <span>0.00</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <span>Layer 2 (Starknet)</span>
-            <div>
-              <div>
-                <span>Received ETH L1</span>
-                <span>0.00</span>
-              </div>
-              <div>
-                <span>Sent From L1</span>
-                <span>0.00</span>
-              </div>
-              <div>
-                <span>Vault Balance L1</span>
-                <span>0.00</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <RowData>
+          <TVLData>
+            <BigText>
+              Mirror TVL
+            </BigText>
+            <HugeText>
+              {formatNumber(tvl)}
+            </HugeText>
+            <HugeText>
+              ETH
+            </HugeText>
+          </TVLData>
+          <RewardsSpace>
+            <BigText>
+              Protocol Participants
+            </BigText>
+            {
+              dataProviderRewards && l1BridgerRewards && l2BridgerRewards &&
+              <RewardsData>
+                <RewardBox>
+                  <AddressText>
+                    {
+                      dataProviderRewards.user_address == "0x0" ?
+                        "0"
+                        :
+                        shortenAddress(dataProviderRewards.user_address)
+
+
+
+                    }
+                  </AddressText>
+                  <PendingRewardsText>
+                    {
+                      (dataProviderRewards.pendingRewards)
+                    }
+                  </PendingRewardsText>
+                </RewardBox>
+
+                <RewardBox>
+                  <AddressText>
+                    {
+                      l1BridgerRewards.user_address == "0x0" ?
+                        "0"
+                        :
+                        shortenAddress(l1BridgerRewards.user_address)
+                    }
+                  </AddressText>
+                  <PendingRewardsText>
+                    {
+                      (l1BridgerRewards.pendingRewards)
+                    }
+                  </PendingRewardsText>
+                </RewardBox>
+
+                <RewardBox>
+                  <AddressText>
+                    {
+                      l2BridgerRewards.user_address == "0x0" ?
+                        "0"
+                        :
+                        shortenAddress(l2BridgerRewards.user_address)
+                    }
+                  </AddressText>
+                  <PendingRewardsText>
+                    {
+                      (l2BridgerRewards.pendingRewards)
+                    }
+                  </PendingRewardsText>
+                </RewardBox>
+
+
+              </RewardsData>
+            }
+
+          </RewardsSpace>
+        </RowData>
+
         <div className="repartition">
           <span>Pool Repartition</span>
           <div>
