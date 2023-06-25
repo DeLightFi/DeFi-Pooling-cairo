@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaLayerGroup } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaLayerGroup } from "react-icons/fa";
 import moment from "moment";
 import {
   ComposedChart,
@@ -253,9 +253,75 @@ const PoolTabStats = ({ connection, setConnection }) => {
         </div>
       </div>
       <div className="stats">
-        <RowData>
+        <div className="figures">
+          <div className="tvl">
+            <span>Mirror TVL</span>
+            <span>{formatNumber(tvl)}</span>
+          </div>
+          <div className="reserves">
+            <div>
+              <span>{l2Alloc.toPrecision(2)}</span>
+              <span>L2 Reserve</span>
+            </div>
+            <div>
+              <span>{l2l1Alloc.toPrecision(2)}</span>
+              <span>L2 <FaArrowRight /> L1</span>
+            </div>
+            <div>
+              <span>{l1Alloc.toPrecision(2)}</span>
+              <span>L1 Reserve</span>
+            </div>
+            <div>
+              <span>{l1l2Alloc.toPrecision(2)}</span>
+              <span>L1 <FaArrowRight /> L2</span>
+            </div>
+          </div>
+          <div className="rewards">
+            <span>Protocol Participants Rewards</span>
+            {dataProviderRewards && l1BridgerRewards && l2BridgerRewards &&
+              <div>
+                <div>
+                  <span>Data Provider</span>
+                  <span>
+                    {
+                      dataProviderRewards.user_address == "0x0" ?
+                        "0"
+                        :
+                        shortenAddress(dataProviderRewards.user_address)
+                    }
+                  </span>
+                  <span>{dataProviderRewards.pendingRewards}</span>
+                </div>
+                <div>
+                  <span>L1 Bridger</span>
+                  <span>
+                    {
+                      l1BridgerRewards.user_address == "0x0" ?
+                        "0"
+                        :
+                        shortenAddress(l1BridgerRewards.user_address)
+                    }
+                  </span>
+                  <span>{l1BridgerRewards.pendingRewards}</span>
+                </div>
+                <div>
+                  <span>L2 Bridger</span>
+                  <span>
+                    {
+                      l2BridgerRewards.user_address == "0x0" ?
+                        "0"
+                        :
+                        shortenAddress(l2BridgerRewards.user_address)
+                    }
+                  </span>
+                  <span>{l2BridgerRewards.pendingRewards.toPrecision(2)}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+        {/* <RowData>
           <RewardsSpace>
-
             <TVLData>
               <BigText>
                 Mirror TVL
@@ -377,7 +443,7 @@ const PoolTabStats = ({ connection, setConnection }) => {
               </RewardsData>
             }
           </RewardsSpace>
-        </RowData>
+        </RowData> */}
         <div className="repartition">
           <span>L1 allocation</span>
           <div>
