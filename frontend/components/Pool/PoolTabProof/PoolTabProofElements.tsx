@@ -65,54 +65,88 @@ export const Container = styled.div`
     flex-direction: row;
     gap: 2%;
 
-    .repartition{
-      width: 100%;
-      padding: 0 2%;
+    .info {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 2%;
-
-      >span{
-          font-size: 1vw;
-          color: #dadada60;
-      }
-
-      >div{
+      gap: 10%;
+      width: 50%;
+    
+      .repartition{
         width: 100%;
-        height: 10px;
+        padding: 0 2%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2%;
 
-        position: relative;
+        >span{
+            font-size: 1vw;
+            color: #dadada60;
+        }
 
-        div:nth-child(1){
-          position: absolute;
-          top: 0;
-          left: 0;
-
+        >div{
           width: 100%;
           height: 10px;
 
-          background-color: #dadada30;
-          border-radius: 10px;
+          position: relative;
+
+          div:nth-child(1){
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 10px;
+
+            background-color: #dadada30;
+            border-radius: 10px;
+          }
+
+          div:nth-child(2){
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            height: 10px;
+
+            background-color: #e6e452;
+            border-radius: 10px;
+          }
         }
 
-        div:nth-child(2){
-          position: absolute;
-          top: 0;
-          left: 0;
-
-          height: 10px;
-
-          background-color: #e6e452;
-          border-radius: 10px;
+        .value{
+          color: #e6e452;
+          font-size: 1.4vw;
+          width: 20%;
+          text-align: center;
         }
       }
 
-      .value{
-        color: #e6e452;
-        font-size: 1.4vw;
-        width: 20%;
-        text-align: center;
+      .allocation{
+        display: flex;
+        flex-direction: row; 
+        align-items: center;
+        justify-content: space-evenly;
+
+        >div{
+          display: flex;
+          flex-direction: column; 
+          align-items: left;
+          justify-content: space-evenly;
+
+          span:nth-child(1){
+            font-weight: light;
+            color: #f5f5f58b;
+            font-size: 0.8vw;
+          }
+
+          span:nth-child(2){
+            font-weight: bold;
+            color: #ffffff;
+            font-size: 1vw;
+          }
+        }
       }
     }
 
@@ -124,22 +158,43 @@ export const Container = styled.div`
       justify-content: center;
       gap: 4%;
 
-      >button{
-        height: 3.5vw;
-        width: 40%;
-        border-radius: 60px;
-        border: none;
-        outline: none;
-        color: #fff;
-        background-color: #000;
+      >div{
+        display: flex;
+        flex-direction: row;
+        gap: 2%;
 
-        font-family: inherit;
-        font-size: 1.2vw;
+        >div{
+          display: flex;
+          flex-direction: column;
+          width: 40%;
+          gap: 10px;
 
-        cursor: pointer;
+          >button{
+            height: 3.5vw;
+            width: 100%;
+            border-radius: 60px;
+            border: none;
+            outline: none;
+            color: #fff;
+            background-color: #000;
 
-        &:hover{
-          background-color: #25262d;
+            font-family: inherit;
+            font-size: 1.2vw;
+
+            cursor: pointer;
+
+            &:hover{
+              background-color: #25262d;
+            }
+          }
+
+          >span{
+            font-size: 0.7vw;
+            color: #dadada80;
+
+            width: 100%;
+            text-align: center;
+          }
         }
       }
     }

@@ -5,43 +5,6 @@ import { BOOSTED_ETH, fetchApiData, fetchApiPostData, fetchCalldata, fetchL1Bala
 import { Container } from "./PoolTabProofElements";
 
 
-const FlexRow = styled.div`
-  display: flex;
-  flex-direction: row; 
-  align-items: center;
-  justify-content: space-evenly;
-`
-
-const FlexCol = styled.div`
-  display: flex;
-  flex-direction: column; 
-  align-items: left;
-  justify-content: space-evenly;
-`
-
-const FlexColStates = styled.div`
-width: 60%;
-  display: flex;
-  flex-direction: column; 
-  align-items: left;
-  justify-content: space-evenly;
-`
-
-
-
-const LightText = styled.div`
-  font-weight: light;
-  color: #f5f5f58b;
-  font-size: small;
-`
-
-const BigText = styled.div`
-  font-weight: bold;
-  color: #ffffff;
-  font-size: medium;
-`
-
-
 interface DataToUpdate {
   y_balance: number;
   l1_received: number;
@@ -272,7 +235,7 @@ const PoolTabProof = ({ connection, setConnection }) => {
       </div>
       <span className="subtitle">Participate in Capital Rebalancing and earn Money Stream</span>
       <div className="equilibrate">
-        <FlexColStates>
+        <div className="info">
           <div className="repartition">
             <span>L2 Capital Allocation</span>
             <div>
@@ -281,48 +244,34 @@ const PoolTabProof = ({ connection, setConnection }) => {
             </div>
             <span className="value" style={{ marginLeft: `calc(${l2Allocation}% - 10%)` }}>{`${l2Allocation.toPrecision(2)}%`}</span>
           </div>
-          <FlexRow>
-            <FlexCol>
-              <LightText>
-                Ideal Allocation
-              </LightText>
-              <BigText>
-                10%
-              </BigText>
-            </FlexCol>
-            <FlexCol>
-              <LightText>
-                L1 Bridge Limit
-              </LightText>
-              <BigText>
-                5%
-              </BigText>
-            </FlexCol>
-            <FlexCol>
-              <LightText>
-                L2 Bridge Limit
-              </LightText>
-              <BigText>
-                15%
-              </BigText>
-            </FlexCol>
-
-          </FlexRow>
-        </FlexColStates>
-
-        <div className="btn">
-          <span>Equilibrate the pool allocation by bridging funds!</span>
-          <button onClick={handleL2Bridge}>L2 Bridge</button>
-          <div>
-            {errorMessageL2Bridge}
-          </div>
-          <button onClick={handleL1Bridge}>Bridge</button>
-          <div>
-            {errorMessageL1Bridge}
-
+          <div className="allocation">
+            <div>
+              <span>Ideal Allocation</span>
+              <span>10%</span>
+            </div>
+            <div>
+              <span>L1 Bridge Limit</span>
+              <span>5%</span>
+            </div>
+            <div>
+              <span>L2 Bridge Limit</span>
+              <span>15%</span>
+            </div>
           </div>
         </div>
-
+        <div className="btn">
+          <span>Equilibrate the pool allocation by bridging funds!</span>
+          <div>
+            <div>
+              <button onClick={handleL2Bridge}>L2 Bridge</button>
+              <span>{errorMessageL2Bridge}</span>
+            </div>
+            <div>
+              <button onClick={handleL1Bridge}>Bridge</button>
+              <span>{errorMessageL1Bridge}</span>
+            </div>
+          </div>
+        </div>
       </div>
       <span className="subtitle">Participate in Providing L1 Data to L2 and earn Money Stream</span>
       <div className="proof">
