@@ -32,5 +32,9 @@ export const Container = styled.div`
       color: #e6e452;
       cursor: pointer;
     }
+
+    &.selected{
+      color: #e6e452;
+    }
   }
 `;

@@ -7,13 +7,13 @@ const PoolTabSelector = ({ setMode }) => {
 
   return (
     <Container>
-      <div onClick={() => setMode("stats")}>
+      <div className={setMode === 'stats' ? 'selected' : ''} onClick={() => setMode("stats")}>
         <FaChartPie />
       </div>
-      <div onClick={() => setMode("proof")}>
+      <div className={setMode === 'proof' ? 'selected' : ''} onClick={() => setMode("proof")}>
         <FaLayerGroup />
       </div>
-      <div onClick={() => setMode("about")}>
+      <div className={setMode === 'about' ? 'selected' : ''} onClick={() => setMode("about")}>
         <FaInfo />
       </div>
     </Container>
