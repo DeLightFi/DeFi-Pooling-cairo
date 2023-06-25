@@ -29,11 +29,9 @@ export const Container = styled.div`
     padding-bottom: 1%;
     border-bottom: 1px solid #dadada30;
 
-    >div{
+    >img{
       height: 80%;
       aspect-ratio: 1/1;
-      border-radius: 100%;
-      background-color: #dadada;  
     }
 
     >span:nth-child(2){
