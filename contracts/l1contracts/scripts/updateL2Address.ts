@@ -3,13 +3,12 @@ import { ethGetStorageAt, proofOfOwnership } from "./get_storage_slot";
 
 async function main() {
     const POOLING = "0x611f68dCBA8F9Cc049669ee75Eac7cc1b53FfE77"
+    const L2_ADDRESS = "3301998585152245325029299062694345304378374425727516902128828494767869819286"
     const l1Pooling = await ethers.getContractAt("L1Pooling", POOLING);
 
-    const L2_ADDRESS = await l1Pooling.l2Address
-    console.log(L2_ADDRESS)
 
-    await l1Pooling.handleConsumeReceive("900000000000000")
-    console.log(`message consumed, received  ETH`)
+    await l1Pooling.updateL2Address(L2_ADDRESS)
+    console.log(`L2 address updated`)
 
 }
 
