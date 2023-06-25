@@ -3,17 +3,17 @@ import { FaChartPie, FaLayerGroup, FaInfo } from "react-icons/fa";
 import { Container } from "./PoolTabSelectorElements";
 
 
-const PoolTabSelector = ({ setMode }) => {
+const PoolTabSelector = ({ mode, setMode }) => {
 
   return (
     <Container>
-      <div className={setMode === 'stats' ? 'selected' : ''} onClick={() => setMode("stats")}>
+      <div className={mode === 'stats' ? 'selected' : ''} onClick={() => setMode("stats")}>
         <FaChartPie />
       </div>
-      <div className={setMode === 'proof' ? 'selected' : ''} onClick={() => setMode("proof")}>
+      <div className={mode === 'proof' ? 'selected' : ''} onClick={() => setMode("proof")}>
         <FaLayerGroup />
       </div>
-      <div className={setMode === 'about' ? 'selected' : ''} onClick={() => setMode("about")}>
+      <div className={mode === 'about' ? 'selected' : ''} onClick={() => setMode("about")}>
         <FaInfo />
       </div>
     </Container>

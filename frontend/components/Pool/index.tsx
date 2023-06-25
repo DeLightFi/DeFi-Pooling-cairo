@@ -13,7 +13,7 @@ export default function Pool({ connection, setConnection }) {
 
   return (
     <Container>
-      <PoolTabSelector setMode={setMode} />
+      <PoolTabSelector mode={mode} setMode={setMode} />
       {mode === "stats" &&
         <PoolTabStats connection={connection} setConnection={setConnection} />
       }
