@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FaLayerGroup } from "react-icons/fa";
 import moment from "moment";
 import {
   ComposedChart,
@@ -102,6 +103,8 @@ const PoolTabStats = ({ connection, setConnection }) => {
             <div style={{ width: `${58.5}%` }} />
           </div>
           <span className="value" style={{ marginLeft: `calc(${58.5}% - 10%)` }}>{`${58.5}%`}</span>
+          <br />
+          <span className="infos">The ideal pool repartition is <b>10%</b>. In order to equilibrate this value, you have the possibility to bridge funds using the <FaLayerGroup /> tab.</span>
         </div>
       </div>
     </Container>

@@ -192,6 +192,10 @@ export const Container = styled.div`
         width: 20%;
         text-align: center;
       }
+
+      .infos{
+        font-size: 0.8vw;
+      }
     }
   }
 `;
