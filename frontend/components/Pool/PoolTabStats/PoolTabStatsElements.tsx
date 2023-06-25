@@ -92,6 +92,17 @@ export const Container = styled.div`
       top: 0;
       left: 0;
     }
+
+    .chartlegend{
+      position: absolute;
+      bottom: 0;
+      right: 0;
+
+      padding-bottom: 1.5%;
+
+      font-size: 0.8vw;
+      color: #dadada60;
+    }
   }
 
   .stats{
@@ -191,6 +202,10 @@ export const Container = styled.div`
         font-size: 1.4vw;
         width: 20%;
         text-align: center;
+      }
+
+      .infos{
+        font-size: 0.8vw;
       }
     }
   }

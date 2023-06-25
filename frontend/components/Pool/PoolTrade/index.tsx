@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { FaLock } from "react-icons/fa";
 import styled from "styled-components";
 import { BOOSTED_ETH, ETH, fetchEthBalance, fetchEthBoostedBalance, fetchShareRatio, formatNumber, getCgTokenPrice } from "../../../utils";
 import LogoNameEth from "./LogoNameEth";
@@ -238,8 +237,6 @@ const PoolTrade = ({ connection, setConnection }: PoolTradeProps) => {
       setErrorMessageDeposit("Connect Wallet Fist")
       return
     }
-
-    console.log("started")
 
     const call_approve: Call = {
       contractAddress: ETH,

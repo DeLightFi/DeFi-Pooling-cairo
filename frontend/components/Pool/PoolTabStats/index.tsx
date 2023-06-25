@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FaLayerGroup } from "react-icons/fa";
 import moment from "moment";
 import {
   ComposedChart,
@@ -9,6 +10,7 @@ import {
 } from "recharts";
 
 import { Container } from "./PoolTabStatsElements";
+import CustomTooltip from "./ChartCustomTooltip";
 
 
 const PoolTabStats = ({ connection, setConnection }) => {
@@ -54,9 +56,15 @@ const PoolTabStats = ({ connection, setConnection }) => {
               fill="transparent"
               fillOpacity="1"
             />
-            {/* <Tooltip cursor={{ stroke: "#25262d6a", strokeDasharray: 5 }} /> */}
+            <Tooltip
+              content={<CustomTooltip payload={data} />}
+              cursor={false}
+            />
           </ComposedChart>
         </ResponsiveContainer>
+        <div className="chartlegend">
+          <span>Evolution of the pool APY through the time</span>
+        </div>
       </div>
       <div className="stats">
         <div className="figures">
@@ -102,6 +110,8 @@ const PoolTabStats = ({ connection, setConnection }) => {
             <div style={{ width: `${58.5}%` }} />
           </div>
           <span className="value" style={{ marginLeft: `calc(${58.5}% - 10%)` }}>{`${58.5}%`}</span>
+          <br />
+          <span className="infos">The ideal pool repartition is <b>10%</b>. In order to equilibrate this value, you have the possibility to bridge funds using the <FaLayerGroup /> tab.</span>
         </div>
       </div>
     </Container>

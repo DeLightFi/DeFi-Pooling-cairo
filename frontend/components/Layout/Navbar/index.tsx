@@ -11,7 +11,6 @@ const Navbar = ({ connection, setConnection }) => {
             modalWalletAppearance: "all"
         });
         if (connection && connection.isConnected) {
-            console.log("settt", connection)
             setConnection(connection);
         }
     };
