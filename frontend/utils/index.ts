@@ -2,9 +2,9 @@ import { Call, number, Provider, validateAndParseAddress } from "starknet"
 
 
 export const ETH = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
-export const BOOSTED_ETH = "0x074cdd6e9db755ac36d136bb8b4087d94eae0cf8df2d61bf8a77d8abc6e67996"
+export const BOOSTED_ETH = "0x0497b9cbcfc36c2b2f58b5af75e69381d31b8f47e981802293b9f1520bbc2360"
 export const FACT_REGISTERY = "0x07c88f02f0757b25547af4d946445f92dbe3416116d46d7b2bd88bcfad65a06f"
-export const L1_POOLING = "395905421631041716726486615856866174406126999155"
+export const L1_POOLING = "1018782390865253064707388422794442757094511058358"
 
 
 export function formatNumber(num: number) {

@@ -44,9 +44,13 @@ const PoolTabStats = ({ connection, setConnection }) => {
         fetchL2Allocation(),
         fetchTvl()
       ]);
+      if (totalCapital == 0) {
+        setL1Allocation(0);
+      } else {
+        const l2_allocation = l1Capital / totalCapital
+        setL1Allocation(100 - (l2_allocation * 100));
+      }
 
-      const l2_allocation = l1Capital / totalCapital
-      setL1Allocation(100 - (l2_allocation * 100));
     };
 
     fetchDataP();

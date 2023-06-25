@@ -5,9 +5,9 @@ type ReturnData = {
     coupons: any
 }
 
-let mapping_storage_slot_pooling_received_eth = 3
-let mapping_storage_slot_pooling_bridged_eth = 4
-let pooling_address = "0x4559035A77Cfbbcc1af18c47118e90A89D7C1673"
+let mapping_storage_slot_pooling_received_eth = 4
+let mapping_storage_slot_pooling_bridged_eth = 5
+let pooling_address = "0xb273c84Af2C533934b5eBcaCE450427c30059dB6"
 let mapping_storage_slot_yearn_balance = 7
 let yearn_vault_address = "0x080C23F201E014FEda37D2Abb2ad11a65cbBf109"
 
